@@ -47,16 +47,33 @@ gameTimer = null;
 		console.log("Init");
 		//getNetworkAddress();
 		getNewData();
-		const mqttClient = mqtt.connect('ws://10.0.0.59:8889/mqtt', {
+		const mqttClient = mqtt.connect('ws://mqtt:8889/mqtt', {
 		  clientId: 'web-client',
 		});
 
+		mqttClient.on('close', () => {
+		  console.log('close from  to MQTT broker');
+		});
+		mqttClient.on('error', () => {
+		  console.log('error from  to MQTT broker');
+		});
+		mqttClient.on('end', () => {
+		  console.log('Reconnect from  to MQTT broker');
+		});
+		mqttClient.on('reconnect', () => {
+		  console.log('Reconnect from  to MQTT broker');
+		});
+		mqttClient.on('disconnect', () => {
+		  console.log('Disconnected from  to MQTT broker');
+		});
 		mqttClient.on('connect', () => {
 		  console.log('Connected to MQTT broker');
 		  mqttClient.subscribe('displayboard/read/laser/#');
+		  mqttClient.subscribe('displayboard/read/resource/post');
+		  console.log('Connect Done');
 		});
 			setInterval(getNewData,15*60*1000);
-			setInterval(updateChit,60*1000);
+			setInterval(updateChit,30*1000);
 
 		mqttClient.on('message', (topic, message) => {
 			  var j = JSON.parse(message.toString());
@@ -80,24 +97,34 @@ gameTimer = null;
 					},j["Timeout"]*1000);
 				// Handle the incoming message payload here
 
-			setInterval(getNewData,15*60*1000);
-			setInterval(updateChit,60*1000);
+			//setInterval(getNewData,15*60*1000);
+			//setInterval(updateChit,60*1000);
 		}
-		if (topic == "displayboard/read/laser/post")  {
+		else if (topic == "displayboard/read/laser/post")  {
 			if ((j['Title'] == "") && ( j['Message'] == "")) {
 			  var x = document.getElementById("post");
 				x.classList.add("hidealert");
 				x.classList.remove("showalert");
-		}  else {
+			} else {
 			  var x = document.getElementById("post");
 				document.getElementById('post_title').innerHTML=j['Title'];
 				document.getElementById('post_text').innerHTML=j['Message'];
 				console.log("SHOW POST",j);
 				x.classList.remove("hidealert");
 				x.classList.add("showalert");
-		}
+			}
+		} else if (topic == "displayboard/read/resource/post")  {
+			  var x = document.getElementById("resource_post");
+				x.classList.remove("hidealert");
+				x.classList.add("showalert");
+				document.getElementById('resource_text').innerHTML=j['Message'];
+				setTimeout(function() {
+				  var x = document.getElementById("resource_post");
+					x.classList.add("hidealert");
+					x.classList.remove("showalert");
+				},5*1000);
+		}  
 
-		}
 			});
 	}
 	function keypress(evt) {
@@ -173,19 +200,32 @@ gameTimer = null;
 		if (x != null) {
 			x.remove();
 		}
+
 		var x = document.getElementById("chit");
 		var xx = x.cloneNode(true);
 		var body = document.getElementById("body");
 		xx.id = "chit"+num;
 		var qs=xx.querySelectorAll('#person')
 		console.log(qs);
+
 		qs[0].innerHTML=record['ORGANIZER'];
 		xx.querySelectorAll('#title')[0].innerHTML=record['SUMMARY']
 		xx.querySelectorAll('#resource')[0].innerHTML=record['DEVICE']
 		xx.querySelectorAll('#dow')[0].innerHTML=record['DOW']
 		xx.querySelectorAll('#time')[0].innerHTML=record['TIME']
-		var v = (175 * num)+200
-		xx.style.top=v+"px";
+
+		/*
+		xx.querySelectorAll('#color1')[0].setAttribute("stop-color","red");
+		xx.querySelectorAll('#color2')[0].setAttribute("stop-color","#000");
+		xx.querySelectorAll('#color3')[0].setAttribute("stop-color","#ff0000");
+		xx.querySelectorAll('#color4')[0].setAttribute("stop-color","#ff0000");
+		xx.querySelectorAll('#color1')[0].style.stopColor="red";
+		xx.querySelectorAll('#color2')[0].style.stopColor="red";
+		xx.querySelectorAll('#color3')[0].style.stopColor="red";
+		xx.querySelectorAll('#color4')[0].style.stopColor="red";
+		*/
+		var v = (15 * num)+30
+		xx.style.top=v+"vh";
 		body.appendChild(xx);
 	}
 	function endofStartGame() {
@@ -352,6 +392,23 @@ left:30px;
   border-radius:10px;
   background-color:#ff0000d0
 }
+#resource_post {
+z-index:105;
+position:absolute;
+bottom:20px;
+left:30px;
+  text-shadow: 1px 1px 2px black, 
+  		0 0 25px black, 
+  		0 0 55px black, 
+		0 0 5px black;
+  box-shadow: 1px 1px 2px black, 
+  		0 0 25px black, 
+  		0 0 55px black, 
+		0 0 5px black;
+  padding:10;
+  border-radius:10px;
+  background-color:#ffffffD0
+}
 #alert {
 z-index:105;
 position:absolute;
@@ -374,7 +431,7 @@ left:30px;
   color: yellow;
   font-family:"Trebuchet MS", Helvetica, sans-serif;
   font-weight:900;
-  font-size:42;
+  font-size:42px;
 }
 
 .alert_title {
@@ -395,8 +452,8 @@ left:30px;
 	animation-iteration-count: 1;
 }
 @keyframes hidealert {
-	0%   {xbackground-color: red;opacity:100%;}
-	100% {xbackground-color: green;opacity:0%;}
+	0%   {opacity:100%;}
+	100% {opacity:0%;}
 }
 .hidealert {
 	opacity:0%;
@@ -523,19 +580,18 @@ body {
 </div>
 -->
 
-<xxsvg width="100%" height="100%" viewBox="0 0 210 297" style="z-index:99;position:absolute;top:0px;left:0px" viewbox ></xxsvg>
-<xxsvg width="198.99mm" height="33.382mm" version="1.1" viewBox="0 0 198.99 33.382" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"> </xxsvg>
+
 
 <div id="chit" class="chit">
 	<svg width="50%" xxheight="100%"  style="z-index:99;position:relative;top:0px;left:0px" version="1.1" viewBox="0 0 198.99 33.382" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
  <defs>
   <linearGradient id="linearGradient7722" x1="45.75" x2="45.75" y1="82.252" y2="106.83" gradientTransform="translate(-26.652 -76.367)" gradientUnits="userSpaceOnUse">
-   <stop stop-color="#00f" offset="0"/>
-   <stop stop-color="#00f" stop-opacity="0" offset="1"/>
+   <stop id="color3" stop-color="#0000ff" offset="0"/>
+   <stop id="color4" stop-color="#0000ff" stop-opacity="0" offset="1"/>
   </linearGradient>
   <linearGradient id="linearGradient7817" x1="55.97" x2="55.727" y1="99.773" y2="107.8" gradientTransform="translate(-26.652 -76.367)" gradientUnits="userSpaceOnUse">
-   <stop stop-color="#000030" offset="0"/>
-   <stop stop-color="#000070" offset="1"/>
+   <stop id="color1" stop-color="#000030" offset="0"/>
+   <stop id="color2" stop-color="#000070" offset="1"/>
   </linearGradient>
  </defs>
  <g fill-rule="evenodd" stroke-linecap="round" stroke-linejoin="round">
@@ -560,256 +616,30 @@ body {
    </text>
   </g>
   <path d="m1.3324 21.46v3.2003c0 3.2757 2.5234 5.9123 5.6575 5.9123h53.978v-9.1126z" fill="url(#linearGradient7817)" stroke-width="2.2"/>
-  <text x="37" y="27" fill="#ffffff" fill-opacity=".99829" font-family="'Eras Medium ITC'" font-size="6.5082px" stroke-width="2.2" style="font-variant-caps:normal;font-variant-east-asian:normal;font-variant-ligatures:normal;font-variant-numeric:normal;text-orientation:upright" xml:space="preserve">
-  <tspan id="resource" text-anchor="right" x="35" y="27.762367" fill="#ffffff" stroke-width="2.2">Epilog</tspan></text>
+  <text x="47" y="27" fill="#ffffff" fill-opacity=".99829" font-family="'Eras Medium ITC'" font-size="6.5082px" stroke-width="2.2" style="font-variant-caps:normal;font-variant-east-asian:normal;font-variant-ligatures:normal;font-variant-numeric:normal;text-orientation:upright" xml:space="preserve">
+  <tspan id="resource" text-anchor="end" x="55" y="27.762367" fill="#ffffff" stroke-width="2.2">Epilog</tspan></text>
  </g>
 </svg>
 </div>
+
 <div id="alert" class="alert hidealert">
 	
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- Created with Inkscape (http://www.inkscape.org/) -->
-
-<svg
-   width="20%"
-   height="20%"
-   viewBox="0 0 60.775007 52.921874"
-   version="1.1"
-   id="svg5"
-   inkscape:version="1.2.1 (9c6d41e410, 2022-07-14)"
-   sodipodi:docname="MakeItAlert.svg"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:svg="http://www.w3.org/2000/svg">
-  <sodipodi:namedview
-     id="namedview7"
-     pagecolor="#ffffff"
-     bordercolor="#000000"
-     borderopacity="0.25"
-     inkscape:showpageshadow="2"
-     inkscape:pageopacity="0.0"
-     inkscape:pagecheckerboard="0"
-     inkscape:deskcolor="#d1d1d1"
-     inkscape:document-units="mm"
-     showgrid="false"
-     inkscape:zoom="2"
-     inkscape:cx="200.25"
-     inkscape:cy="142"
-     inkscape:window-width="1920"
-     inkscape:window-height="1003"
-     inkscape:window-x="3832"
-     inkscape:window-y="5"
-     inkscape:window-maximized="1"
-     inkscape:current-layer="layer1" />
-  <defs
-     id="defs2" />
-  <g
-     inkscape:label="Layer 1"
-     inkscape:groupmode="layer"
-     id="layer1"
-     transform="translate(-33.3375,-64.690625)">
-    <path
-       sodipodi:type="star"
-       style="fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:2.02169;stroke-linecap:round;stroke-linejoin:round"
-       id="path1050"
-       inkscape:flatsided="true"
-       sodipodi:sides="3"
-       sodipodi:cx="63.667843"
-       sodipodi:cy="98.999992"
-       sodipodi:r1="33.188995"
-       sodipodi:r2="16.594498"
-       sodipodi:arg1="0.52359878"
-       sodipodi:arg2="1.5707963"
-       inkscape:rounded="0"
-       inkscape:randomized="0"
-       d="m 92.410356,115.59449 -57.485026,0 28.742513,-49.783493 z"
-       inkscape:transform-center-y="-8.2117818"
-       transform="matrix(0.98883743,0,0,0.98969922,1.1999468,1.1807506)" />
-    <g
-       id="g3965"
-       transform="matrix(0.27191805,0,0,0.27215503,-31.114102,-26.279645)"
-       style="stroke-width:0.972602">
-      <path
-         id="path3068"
-         d="M 348.10486,394.94204"
-         inkscape:connector-curvature="0"
-         style="fill:none;stroke-width:0.972602" />
-      <path
-         id="path3070"
-         d="M 348.49386,491.12504"
-         inkscape:connector-curvature="0"
-         style="fill:#e68726;stroke-width:0.972602" />
-      <g
-         transform="translate(10.20086,-82.073963)"
-         id="g3096"
-         style="stroke-width:0.972602">
-        <g
-           id="g3089"
-           style="stroke-width:0.972602">
-          <path
-             d="m 329.085,559.977 c -0.55,0 -1.1,0 -2.089,0 0,-2.374 0,-4.65 0,-7.025 0.22,-9.202 -3.411,-17.316 -8.8,-24.936 -7.15,-10.391 -7.92,-21.176 -1.43,-31.962 5.06,-8.411 13.089,-13.26 23.98,-13.062 8.58,0.198 15.4,4.156 20.57,10.192 8.689,10.291 9.019,24.837 0.33,35.623 -4.4,5.542 -7.261,11.578 -9.13,18.01 -0.99,3.266 -0.621,6.88 -0.99,10.291 -0.11,0.989 -0.046,1.868 -0.164,2.886 -0.989,0 -2.586,-0.017 -3.577,-0.017 -6.159,0 -12.43,0 -18.7,0 z"
-             inkscape:connector-curvature="0"
-             id="path2992"
-             style="fill:#e68726;stroke-width:0.972602" />
-        </g>
-      </g>
-      <g
-         id="g3079"
-         transform="translate(10.20086,-82.073963)"
-         style="stroke-width:0.972602">
-        <path
-           style="fill:#e68726;stroke-width:0.972602"
-           inkscape:connector-curvature="0"
-           d="m 330.964,581.524 c 1.522,2.737 4.637,4.618 8.242,4.618 4.735,0 8.631,-3.239 9.17,-7.412 z"
-           id="path3081" />
-      </g>
-      <g
-         id="g3083"
-         transform="translate(10.20086,-82.073963)"
-         style="stroke-width:0.972602">
-        <path
-           style="fill:#e68726;stroke-width:0.972602"
-           inkscape:connector-curvature="0"
-           d="m 328.344,565.565 c -1.742,0.342 -3.076,1.697 -2.976,2.976 0.101,1.277 1.561,2.006 3.257,1.655 7.037,-1.448 14.165,-2.464 21.332,-2.972 1.754,-0.126 3.275,-1.202 3.372,-2.43 0.097,-1.228 -1.301,-2.175 -3.1,-2.063 -7.348,0.456 -14.661,1.421 -21.885,2.834 z"
-           id="path3085" />
-        <path
-           style="fill:#e68726;stroke-width:0.972602"
-           inkscape:connector-curvature="0"
-           d="m 328.846,573.812 c -1.661,0.357 -2.927,1.727 -2.826,3.004 0.101,1.277 1.494,1.993 3.109,1.627 7.97,-1.809 12.068,-2.471 20.344,-3.221 1.677,-0.151 3.134,-1.249 3.231,-2.477 0.097,-1.228 -1.239,-2.149 -2.959,-2.013 -8.492,0.68 -12.702,1.315 -20.899,3.08 z"
-           id="path3087" />
-      </g>
-    </g>
-  </g>
-</svg>
+	<img height="80px" style="vertical-align:bottom" src="MakeItPost.svg" />
 	<tspan id="alert_title" class="alert_title">Test</tspan>
 	<hr />
 	<tspan id="alert_text" class="alert_text">Test</tspan>
 </div>
 <div id="post" class="hidealert">
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- Created with Inkscape (http://www.inkscape.org/) -->
 
-<svg
-   width="22%"
-   height="22%"
-   viewBox="0 0 55.747923 44.455207"
-   version="1.1"
-   id="svg5"
-   inkscape:version="1.2.1 (9c6d41e410, 2022-07-14)"
-   sodipodi:docname="MakeItPost.svg"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:svg="http://www.w3.org/2000/svg">
-  <sodipodi:namedview
-     id="namedview7"
-     pagecolor="#ffffff"
-     bordercolor="#000000"
-     borderopacity="0.25"
-     inkscape:showpageshadow="2"
-     inkscape:pageopacity="0.0"
-     inkscape:pagecheckerboard="0"
-     inkscape:deskcolor="#d1d1d1"
-     inkscape:document-units="mm"
-     showgrid="false"
-     inkscape:zoom="2"
-     inkscape:cx="97"
-     inkscape:cy="142"
-     inkscape:window-width="1920"
-     inkscape:window-height="1003"
-     inkscape:window-x="3832"
-     inkscape:window-y="5"
-     inkscape:window-maximized="1"
-     inkscape:current-layer="layer1" />
-  <defs
-     id="defs2">
-    <filter
-       inkscape:collect="always"
-       style="color-interpolation-filters:sRGB"
-       id="filter2997"
-       x="-0.052311403"
-       y="-0.068636786"
-       width="1.10462"
-       height="1.1372736">
-      <feGaussianBlur
-         inkscape:collect="always"
-         stdDeviation="0.83346118"
-         id="feGaussianBlur2999" />
-    </filter>
-  </defs>
-  <g
-     inkscape:label="Layer 1"
-     inkscape:groupmode="layer"
-     id="layer1"
-     transform="translate(-33.3375,-64.690625)">
-    <path
-       id="path2995"
-       style="mix-blend-mode:normal;fill:#000000;fill-rule:evenodd;stroke:#000000;stroke-width:1.41111;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;filter:url(#filter2997)"
-       d="m 57.414583,67.46875 a 21.960417,19.711458 0 0 0 -21.960417,19.711458 21.960417,19.711458 0 0 0 21.960417,19.711452 21.960417,19.711458 0 0 0 15.60835,-5.86424 l 14.157275,5.59966 -9.41803,-12.050945 A 21.960417,19.711458 0 0 0 79.375,87.180208 21.960417,19.711458 0 0 0 57.414583,67.46875 Z" />
-    <path
-       id="path2569"
-       style="fill:#ffffff;fill-rule:evenodd;stroke:#000000;stroke-width:1.41111;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
-       d="M 56.885417,66.542708 A 21.960417,19.711458 0 0 0 34.925,86.254166 a 21.960417,19.711458 0 0 0 21.960417,19.711454 21.960417,19.711458 0 0 0 15.60835,-5.86424 l 14.157275,5.59966 -9.41803,-12.050947 A 21.960417,19.711458 0 0 0 78.845834,86.254166 21.960417,19.711458 0 0 0 56.885417,66.542708 Z" />
-    <g
-       id="g3965"
-       transform="matrix(0.27191805,0,0,0.27215503,-38.12556,-35.540062)"
-       style="stroke-width:5.18721;stroke-dasharray:none">
-      <path
-         id="path3068"
-         d="M 348.10486,394.94204"
-         inkscape:connector-curvature="0"
-         style="fill:none;stroke-width:5.18721;stroke-dasharray:none" />
-      <path
-         id="path3070"
-         d="M 348.49386,491.12504"
-         inkscape:connector-curvature="0"
-         style="fill:#e68726;stroke-width:5.18721;stroke-dasharray:none" />
-      <g
-         transform="translate(10.20086,-82.073963)"
-         id="g3096"
-         style="stroke-width:5.18721;stroke-dasharray:none">
-        <g
-           id="g3089"
-           style="stroke-width:5.18721;stroke-dasharray:none">
-          <path
-             d="m 329.085,559.977 c -0.55,0 -1.1,0 -2.089,0 0,-2.374 0,-4.65 0,-7.025 0.22,-9.202 -3.411,-17.316 -8.8,-24.936 -7.15,-10.391 -7.92,-21.176 -1.43,-31.962 5.06,-8.411 13.089,-13.26 23.98,-13.062 8.58,0.198 15.4,4.156 20.57,10.192 8.689,10.291 9.019,24.837 0.33,35.623 -4.4,5.542 -7.261,11.578 -9.13,18.01 -0.99,3.266 -0.621,6.88 -0.99,10.291 -0.11,0.989 -0.046,1.868 -0.164,2.886 -0.989,0 -2.586,-0.017 -3.577,-0.017 -6.159,0 -12.43,0 -18.7,0 z"
-             inkscape:connector-curvature="0"
-             id="path2992"
-             style="fill:#e68726;stroke-width:5.18721;stroke-dasharray:none" />
-        </g>
-      </g>
-      <g
-         id="g3079"
-         transform="translate(10.20086,-82.073963)"
-         style="stroke-width:5.18721;stroke-dasharray:none">
-        <path
-           style="fill:#e68726;stroke-width:5.18721;stroke-dasharray:none"
-           inkscape:connector-curvature="0"
-           d="m 330.964,581.524 c 1.522,2.737 4.637,4.618 8.242,4.618 4.735,0 8.631,-3.239 9.17,-7.412 z"
-           id="path3081" />
-      </g>
-      <g
-         id="g3083"
-         transform="translate(10.20086,-82.073963)"
-         style="stroke-width:5.18721;stroke-dasharray:none">
-        <path
-           style="fill:#e68726;stroke-width:5.18721;stroke-dasharray:none"
-           inkscape:connector-curvature="0"
-           d="m 328.344,565.565 c -1.742,0.342 -3.076,1.697 -2.976,2.976 0.101,1.277 1.561,2.006 3.257,1.655 7.037,-1.448 14.165,-2.464 21.332,-2.972 1.754,-0.126 3.275,-1.202 3.372,-2.43 0.097,-1.228 -1.301,-2.175 -3.1,-2.063 -7.348,0.456 -14.661,1.421 -21.885,2.834 z"
-           id="path3085" />
-        <path
-           style="fill:#e68726;stroke-width:5.18721;stroke-dasharray:none"
-           inkscape:connector-curvature="0"
-           d="m 328.846,573.812 c -1.661,0.357 -2.927,1.727 -2.826,3.004 0.101,1.277 1.494,1.993 3.109,1.627 7.97,-1.809 12.068,-2.471 20.344,-3.221 1.677,-0.151 3.134,-1.249 3.231,-2.477 0.097,-1.228 -1.239,-2.149 -2.959,-2.013 -8.492,0.68 -12.702,1.315 -20.899,3.08 z"
-           id="path3087" />
-      </g>
-    </g>
-  </g>
-</svg>
+
+	<img height="80px" style="vertical-align:bottom" src="MakeItAlert.svg" />
 	<tspan id="post_title" class="alert_title">Test</tspan>
 	<hr />
 	<tspan id="post_text" class="alert_text">Test</tspan>
+</div>
+<div id="resource_post" class="hidealert">
+	<img height="60px" style="vertical-align:bottom" src="MakeItCog.svg" />
+	<tspan id="resource_text" style="font-size:30px" class="alert_title">Test</tspan>
 </div>
 </body>
 </html
