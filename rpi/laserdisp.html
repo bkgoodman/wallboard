@@ -1,0 +1,646 @@
+<html>
+<head>
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+<script type="text/javascript">
+var myvid = document.getElementById('myvideo');
+
+	var alertTimer=null;
+
+	var chitData={};
+	document.onkeypress = keypress;
+	topScore=0;
+titleAnimation=null;
+gameTimer = null;
+
+	function updateChit() {
+		console.log("Update chit");
+		console.log(chitData);
+		for (var c in chitData) {
+			console.log(c,chitData[c]);
+			setTimeout(startChit,250*c,c,chitData[c]);
+		}
+	}
+
+	function gotAddr(data) {
+		var x = document.getElementById("title");
+		x.innerText = data['addr'];
+	}
+	function getNetworkAddress() {
+			try {
+			fetch("file:addr.json")
+			  .then((response) => response.json())
+			.then((data) => {gotAddr(data);})
+			.then((rejection) => { if (rejection != null) console.error(r)});
+			} catch (error) {
+		var x = document.getElementById("title");
+		x.innerText = error;
+			}
+	}
+	function getNewData() {
+			console.log("Start Update")
+			fetch("https://auth.makeitlabs.com/cgi/lasercal.py")
+			  .then((response) => response.json())
+			.then((data) => {console.log("Got Chit Data"); chitData = data;})
+			.then((rejection) => { if (rejection != null) console.error(r)});
+	}
+	function initDisplay() {
+		console.log("Init");
+		//getNetworkAddress();
+		getNewData();
+		const mqttClient = mqtt.connect('ws://mqtt:8889/mqtt', {
+		  clientId: 'web-client',
+		});
+
+		mqttClient.on('close', () => {
+		  console.log('close from  to MQTT broker');
+		});
+		mqttClient.on('error', () => {
+		  console.log('error from  to MQTT broker');
+		});
+		mqttClient.on('end', () => {
+		  console.log('Reconnect from  to MQTT broker');
+		});
+		mqttClient.on('reconnect', () => {
+		  console.log('Reconnect from  to MQTT broker');
+		});
+		mqttClient.on('disconnect', () => {
+		  console.log('Disconnected from  to MQTT broker');
+		});
+		mqttClient.on('connect', () => {
+		  console.log('Connected to MQTT broker');
+		  mqttClient.subscribe('displayboard/read/laser/#');
+		  mqttClient.subscribe('displayboard/read/resource/post');
+		  console.log('Connect Done');
+		});
+			setInterval(getNewData,15*60*1000);
+			setInterval(updateChit,30*1000);
+
+		mqttClient.on('message', (topic, message) => {
+			  var j = JSON.parse(message.toString());
+			  console.log(`Received message on ${topic}: ${message.toJSON()}`);
+		if (topic == "displayboard/read/laser/alert")  {
+			  var x = document.getElementById("alert");
+				document.getElementById('alert_title').innerHTML=j['Title'];
+				document.getElementById('alert_text').innerHTML=j['Message'];
+				console.log(j);
+				x.classList.remove("hidealert");
+				x.classList.add("showalert");
+				if (alertTimer != null) {
+					clearTimeout(alertTimer);
+				}
+				alertTimer = setTimeout(
+					function() {
+			  var x = document.getElementById("alert");
+					x.classList.add("hidealert");
+					x.classList.remove("showalert");
+					alertTimer=null;
+					},j["Timeout"]*1000);
+				// Handle the incoming message payload here
+
+			//setInterval(getNewData,15*60*1000);
+			//setInterval(updateChit,60*1000);
+		}
+		else if (topic == "displayboard/read/laser/post")  {
+			if ((j['Title'] == "") && ( j['Message'] == "")) {
+			  var x = document.getElementById("post");
+				x.classList.add("hidealert");
+				x.classList.remove("showalert");
+			} else {
+			  var x = document.getElementById("post");
+				document.getElementById('post_title').innerHTML=j['Title'];
+				document.getElementById('post_text').innerHTML=j['Message'];
+				console.log("SHOW POST",j);
+				x.classList.remove("hidealert");
+				x.classList.add("showalert");
+			}
+		} else if (topic == "displayboard/read/resource/post")  {
+			  var x = document.getElementById("resource_post");
+				x.classList.remove("hidealert");
+				x.classList.add("showalert");
+				document.getElementById('resource_text').innerHTML=j['Message'];
+				setTimeout(function() {
+				  var x = document.getElementById("resource_post");
+					x.classList.add("hidealert");
+					x.classList.remove("showalert");
+				},5*1000);
+		}  
+
+			});
+	}
+	function keypress(evt) {
+		if (evt.key=="b"){
+			startGame();
+		}
+		if (evt.key=="e"){
+			stopGame();
+		}
+		if (evt.key=="1"){
+			startChit(1);
+		}
+		if (evt.key=="2"){
+			startChit(2);
+		}
+		if (evt.key=="3"){
+			startChit(3);
+		}
+		if (evt.key=="4"){
+			startChit(4);
+		}
+		if (evt.key=="5") {
+			getNewData();
+		}
+		if (evt.key=="6"){
+			updateChit();
+		}
+		if (evt.key=="z"){
+			topScore=0;
+			document.getElementById("topscore").innerHTML="";
+			document.getElementById("start1").innerHTML="";
+			document.getElementById("start2").innerHTML="";
+			document.getElementById("start3").innerHTML="";
+			document.getElementById("Timer").innerHTML="";
+			if (gameTimer != null)
+				clearInterval(gameTimer);
+			gameTimer = null;
+			endBest();
+			endofStartGame();
+		}
+
+	}
+	function startGame() {
+
+	console.log("----StART GAMTE----");
+	startTime=Date.now();
+	gameTimer = setInterval(function() {
+		var d=document.getElementById("Timer");
+		var e = (Date.now()-startTime)/100
+		d.classList.add("anim1");
+		d.classList.add("title");
+		d=document.getElementById("start2");
+		d.innerHTML="<h1>Begin!</h1>";
+		d.classList.add("anim2");
+		d.classList.add("title");
+		d=document.getElementById("start3");
+		d.innerHTML="<h1>Begin!</h1>";
+		d.classList.add("anim3");
+		d.classList.add("title");
+		var d=document.getElementById("backer");
+		d.style.backgroundColor="#00ff00";
+		d.classList.add("backer");
+		if (titleAnimation != null)
+			clearTimeout(titleAnimation);
+		titleAnimation = setTimeout(endofStartGame,6000);
+	});
+	}
+
+
+	function startChit(num,record) {
+		console.log("Start chit ",num);
+		var x = document.getElementById("chit"+num);
+		if (x != null) {
+			x.remove();
+		}
+
+		var x = document.getElementById("chit");
+		var xx = x.cloneNode(true);
+		var body = document.getElementById("body");
+		xx.id = "chit"+num;
+		var qs=xx.querySelectorAll('#person')
+		console.log(qs);
+
+		qs[0].innerHTML=record['ORGANIZER'];
+		xx.querySelectorAll('#title')[0].innerHTML=record['SUMMARY']
+		xx.querySelectorAll('#resource')[0].innerHTML=record['DEVICE']
+		xx.querySelectorAll('#dow')[0].innerHTML=record['DOW']
+		xx.querySelectorAll('#time')[0].innerHTML=record['TIME']
+
+		/*
+		xx.querySelectorAll('#color1')[0].setAttribute("stop-color","red");
+		xx.querySelectorAll('#color2')[0].setAttribute("stop-color","#000");
+		xx.querySelectorAll('#color3')[0].setAttribute("stop-color","#ff0000");
+		xx.querySelectorAll('#color4')[0].setAttribute("stop-color","#ff0000");
+		xx.querySelectorAll('#color1')[0].style.stopColor="red";
+		xx.querySelectorAll('#color2')[0].style.stopColor="red";
+		xx.querySelectorAll('#color3')[0].style.stopColor="red";
+		xx.querySelectorAll('#color4')[0].style.stopColor="red";
+		*/
+		var v = (15 * num)+30
+		xx.style.top=v+"vh";
+		body.appendChild(xx);
+	}
+	function endofStartGame() {
+		console.log("EndofStartGame");
+		if (titleAnimation != null)
+			clearTimeout(titleAnimation);
+		titleAnimation = null;
+		var d=document.getElementById("start1");
+		d.classList.remove("anim1");
+		d.classList.remove("title");
+		d=document.getElementById("start2");
+		d.classList.remove("anim2");
+		d.classList.remove("title");
+		d=document.getElementById("start3");
+		d.classList.remove("anim3");
+		d.classList.remove("title");
+		var d=document.getElementById("backer");
+		d.classList.remove("backer");
+	}
+
+	function endBest() {
+		console.log("ClearNewBest");
+		if (bestInterval != null)
+			clearTimeout(bestInterval);
+		var n=document.getElementById("newbest");
+		n.classList.remove("newbestshow");
+		n.classList.add("newbesthide");
+		bestInterval = null;
+	}
+
+	function stopGame() {
+		console.log("StopGame");
+		if (gameTimer != null)
+			clearInterval(gameTimer);
+		gameTimer = null;
+		endofStartGame();
+		var d=document.getElementById("Timer");
+		var e = (Date.now()-startTime)/100;
+		var s = Math.round(e/10);
+		var t = Math.round(e)%10;
+		d.innerHTML="Elapsed: "+String(s)+"."+String(t);
+
+		var d=document.getElementById("start1");
+		d.innerHTML="<h2>Game Over</h2>";
+		d.classList.remove("anim1");
+		d=document.getElementById("start2");
+		d.innerHTML="<h2>Game Over</h2>";
+		d.classList.remove("anim2");
+		d=document.getElementById("start3");
+		d.innerHTML="<h2>Game Over</h2>";
+		d.classList.remove("anim3");
+		var d=document.getElementById("backer");
+		d.classList.remove("backer");
+		//d.animation="none";
+		setTimeout(function() {
+		var d=document.getElementById("backer");
+
+			var d=document.getElementById("start1");
+			d.innerHTML="<h2>Game Over</h2>";
+			d.classList.add("anim1");
+			d.classList.add("title");
+
+			d=document.getElementById("start2");
+			d.innerHTML="<h2>Game Over</h2>";
+			d.classList.add("anim2");
+			d.classList.add("title");
+
+			d=document.getElementById("start3");
+			d.innerHTML="<h2>Game Over</h2>";
+			d.classList.add("anim3");
+			d.classList.add("title");
+
+			var d=document.getElementById("backer");
+			d.style.backgroundColor="#ff0000";
+			d.classList.add("backer");
+			//d.animation="";
+		},1);
+		titleAnimation = setTimeout(endofStartGame,6000);
+
+		if ((topScore == 0) || (e > topScore)) {
+			var n=document.getElementById("newbest");
+			n.classList.remove("newbesthide");
+			n.classList.add("newbestshow");
+			bestInterval = setInterval(endBest,9000);
+			var d=document.getElementById("topscore");
+			d.innerHTML="Best Time: "+String(s)+"."+String(t);
+			topScore = e;
+		}
+
+	}
+
+
+
+</script>
+
+
+
+<style>
+@keyframes backer {
+	0%   {opacity:0%;}
+	15%  {opacity:100%;}
+	50%  {opacity:60%;}
+	100% {opacity:0%;}
+}
+
+.backer {
+z-index:55;
+width:800px;
+height:465px;
+position:absolute;
+top:0px;
+left:0px;
+animation-name:backer;
+animation-duration: 6s;
+animation-iteration-count: 1;
+opacity:0%;
+}
+
+.backerdisabled: {
+z-index:100;
+background-color:red;
+width:800px;
+height:450px;
+position:absolute;
+top:0px;
+left:0px;
+}
+
+@keyframes timeranim {
+	0%   {opacity:0%;}
+	100% {opacity:100%;}
+}
+@keyframes newbest {
+	0%   {opacity:0%;transform:rotate(-180deg);}
+	20%  {opacity:0%;transform:rotate(-180deg);}
+	40%  {opacity:100%;transform:rotate(20deg);}
+	50%  {opacity:100%;transform:rotate(10deg);}
+	60%  {opacity:100%;transform:rotate(20deg);}
+	70%  {opacity:100%;transform:rotate(10deg);}
+	80%  {opacity:100%;transform:rotate(20deg);}
+	100% {opacity:0%;transform:rotate(180deg);}
+}
+@keyframes example {
+  0%   {xbackground-color: red;opacity:0%;right:200vw}
+  15%  {xbackground-color: yellow;opacity:100%;right:10vw}
+  50%  {xbackground-color: blue;opacity:100%;right:10vw}
+  100% {xbackground-color: green;opacity:0%;right:-10vw}
+}
+
+#post {
+z-index:115;
+position:absolute;
+top:20px;
+left:30px;
+  text-shadow: 1px 1px 2px black, 
+  		0 0 25px black, 
+  		0 0 55px black, 
+		0 0 5px black;
+  box-shadow: 1px 1px 2px black, 
+  		0 0 25px black, 
+  		0 0 55px black, 
+		0 0 5px black;
+  padding:25px;
+  border-radius:10px;
+  background-color:#ff0000d0
+}
+#resource_post {
+z-index:105;
+position:absolute;
+bottom:20px;
+left:30px;
+  text-shadow: 1px 1px 2px black, 
+  		0 0 25px black, 
+  		0 0 55px black, 
+		0 0 5px black;
+  box-shadow: 1px 1px 2px black, 
+  		0 0 25px black, 
+  		0 0 55px black, 
+		0 0 5px black;
+  padding:10;
+  border-radius:10px;
+  background-color:#ffffffD0
+}
+#alert {
+z-index:105;
+position:absolute;
+top:20px;
+left:30px;
+  text-shadow: 1px 1px 2px black, 
+  		0 0 25px black, 
+  		0 0 55px black, 
+		0 0 5px black;
+  box-shadow: 1px 1px 2px black, 
+  		0 0 25px black, 
+  		0 0 55px black, 
+		0 0 5px black;
+  padding:25px;
+  border-radius:10px;
+  background-color:#0000FFD0
+}
+
+.alert_text {
+  color: yellow;
+  font-family:"Trebuchet MS", Helvetica, sans-serif;
+  font-weight:900;
+  font-size:42px;
+}
+
+.alert_title {
+  color: white;
+  font-family:"Trebuchet MS", Helvetica, sans-serif;
+  font-weight:900;
+  font-size:86px;
+}
+
+@keyframes showalert {
+	0%   {opacity:0%;}
+	100% {opacity:100%;}
+}
+.showalert {
+	opacity:100%;
+	animation-name: showalert;
+	animation-duration: 3s;
+	animation-iteration-count: 1;
+}
+@keyframes hidealert {
+	0%   {opacity:100%;}
+	100% {opacity:0%;}
+}
+.hidealert {
+	opacity:0%;
+	animation-name: hidealert;
+	animation-duration: 3s;
+	animation-iteration-count: 1;
+}
+
+.newbest {
+z-index:105;
+position:absolute;
+top:50px;
+left:30px;
+  color: yellow;
+  text-shadow: 1px 1px 2px black, 
+  		0 0 25px black, 
+  		0 0 55px black, 
+		0 0 5px black;
+  font-family:"Trebuchet MS", Helvetica, sans-serif;
+  font-weight:900;
+  font-size:86px;
+}
+
+@keyframes chit {
+	0%   {opacity:0%;left: 200vw;}
+	10%  {opacity:100%;left: 40vw;}
+	90%  {opacity:100%;left: 40vw;}
+	100%  {opacity:0%;left 200vw;}
+}
+.chit {
+	opacity: 0%;
+	animation-name: chit;
+	animation-duration: 15s;
+	animation-iteration-count: 1;
+	width: 100%;
+	position: fixed;
+	left: 200vw;
+
+}
+.newbestshow {
+animation-name: newbest;
+animation-duration: 8s;
+animation-iteration-count: 1;
+opacity:0%;
+}
+.newbesthide {
+opacity:0%;
+}
+
+.topscore {
+z-index:99;
+position:absolute;
+top:330px;
+left:30px;
+padding:50px;
+  color: white;
+  text-shadow: 1px 1px 2px black, 
+  		0 0 25px black, 
+  		0 0 55px black, 
+		0 0 5px black;
+  font-family:"Trebuchet MS", Helvetica, sans-serif;
+  font-weight:900;
+  font-size:56px;
+}
+.title {
+z-index:99;
+xbackground-color:red;
+position:absolute;
+top:50px;
+width:550px;
+padding:50px;
+animation-name: example;
+animation-duration: 6s;
+animation-iteration-count: infinite;
+  color: white;
+  text-shadow: 1px 1px 2px black, 
+  		0 0 25px black, 
+  		0 0 55px black, 
+		0 0 5px black;
+  xbox-shadow: 10px 10px 5px 12px lightblue;
+  font-family:"Trebuchet MS", Helvetica, sans-serif;
+  font-weight:900;
+  font-size:68px;
+}
+
+.timer {
+z-index:98;
+position:absolute;
+top:50px;
+left:15;
+padding:20px;
+width:100%;
+animation-name: timeranim;
+animation-duration: 3s;
+animation-iteration-count: 1;
+  color: white;
+  text-shadow: 1px 1px 2px black, 
+  		0 0 25px black, 
+  		0 0 55px black, 
+		0 0 5px black;
+  xbox-shadow: 10px 10px 5px 12px lightblue;
+  font-family:"Trebuchet MS", Helvetica, sans-serif;
+  font-weight:900;
+  font-size:90px;
+}
+
+body {
+	overflow:hidden;
+	background-color:black;
+}
+</style>
+	</head>
+	<body id="body" onLoad="initDisplay();">
+<div id="backer" class="backerdisabled" style="background-color:red"></div>
+<video id="myvideo" width=100% height=100% style="z-index:0;position:absolute;top:0px;left:0px" autoplay loop preload playsinline muted>
+  <source src="LaserRoom.webm" />
+  <source class="active" src="LaserRoom.webm" />
+  Your browser does not support the video tag.
+</video>
+<!--
+<div class="title">
+	<h1>Testing</h1>
+	<p>This is a test</p>
+</div>
+-->
+
+
+
+<div id="chit" class="chit">
+	<svg width="50%" xxheight="100%"  style="z-index:99;position:relative;top:0px;left:0px" version="1.1" viewBox="0 0 198.99 33.382" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <defs>
+  <linearGradient id="linearGradient7722" x1="45.75" x2="45.75" y1="82.252" y2="106.83" gradientTransform="translate(-26.652 -76.367)" gradientUnits="userSpaceOnUse">
+   <stop id="color3" stop-color="#0000ff" offset="0"/>
+   <stop id="color4" stop-color="#0000ff" stop-opacity="0" offset="1"/>
+  </linearGradient>
+  <linearGradient id="linearGradient7817" x1="55.97" x2="55.727" y1="99.773" y2="107.8" gradientTransform="translate(-26.652 -76.367)" gradientUnits="userSpaceOnUse">
+   <stop id="color1" stop-color="#000030" offset="0"/>
+   <stop id="color2" stop-color="#000070" offset="1"/>
+  </linearGradient>
+ </defs>
+ <g fill-rule="evenodd" stroke-linecap="round" stroke-linejoin="round">
+  <g stroke-width="2.2">
+   <path d="m7.8906 0.34776c-4.1037 0-7.5313 3.0295-7.5313 6.8848v17.428c0 3.8553 3.4276 6.8848 7.5313 6.8848h183.43c4.1037 0 7.5293-3.0298 7.5293-6.8848v-17.428c0-3.8549-3.4256-6.8848-7.5293-6.8848z" fill-opacity=".99829"/>
+   <rect x="1.3324" y="1.3198" width="196.54" height="29.253" rx="6.5573" ry="5.9128" fill="#fff" fill-opacity=".99829"/>
+   <path d="m6.9899 1.3197c-3.1341 0-5.6575 2.6372-5.6577 5.9128v17.427c0 3.2757 2.5234 5.9123 5.6575 5.9123h53.977v-29.252z" fill="url(#linearGradient7722)"/>
+  </g>
+  <g fill-opacity=".99829" font-family="'Eras Medium ITC'">
+   <text x="31.391813" y="10.497421" fill="#ffffff" font-size="8.181px" stroke-width="2.2" style="font-variant-caps:normal;font-variant-east-asian:normal;font-variant-ligatures:normal;font-variant-numeric:normal;text-orientation:upright" xml:space="preserve">
+   <tspan id="dow" text-anchor="middle" x="34" y="10.497421" fill="#ffffff" font-family="'Eras Medium ITC'" font-size="8.181px" stroke-width="2.2" text-align="center" text-anchor="middle" style="font-variant-caps:normal;font-variant-east-asian:normal;font-variant-ligatures:normal;font-variant-numeric:normal">MON</tspan>
+   </text>
+
+   <text x="28.217127" y="18.313812" fill="#ffffff" font-size="7px" stroke-width="2.2" style="font-variant-caps:normal;font-variant-east-asian:normal;font-variant-ligatures:normal;font-variant-numeric:normal;text-orientation:upright" xml:space="preserve">
+   <tspan id="time" text-anchor="middle" x="34" y="18.313812" fill="#ffffff" font-family="'Eras Medium ITC'" font-size="7px" stroke-width="2.2" text-align="center" text-anchor="middle" style="font-variant-caps:normal;font-variant-east-asian:normal;font-variant-ligatures:normal;font-variant-numeric:normal">12:00  - 1PM</tspan>
+   </text>
+
+   <text><tspan id="title" x="63" y="12" fill="#000000" font-family="'Eras Medium ITC'" font-size="12px" stroke-width="2.2" text-align="left" text-anchor="left" style="font-variant-caps:normal;font-variant-east-asian:normal;font-variant-ligatures:normal;font-variant-numeric:normal">TESTING</tspan>
+   </text>
+
+   <text><tspan id="person" x="190" y="28" fill="#d0d0d0" font-family="sans-serif" text-anchor="end" font-size="12px" stroke-width="2.2" text-align="center" text-anchor="middle" style="font-variant-caps:normal;font-variant-east-asian:normal;font-variant-ligatures:normal;font-variant-numeric:normal">TESTING</tspan>
+   </text>
+  </g>
+  <path d="m1.3324 21.46v3.2003c0 3.2757 2.5234 5.9123 5.6575 5.9123h53.978v-9.1126z" fill="url(#linearGradient7817)" stroke-width="2.2"/>
+  <text x="47" y="27" fill="#ffffff" fill-opacity=".99829" font-family="'Eras Medium ITC'" font-size="6.5082px" stroke-width="2.2" style="font-variant-caps:normal;font-variant-east-asian:normal;font-variant-ligatures:normal;font-variant-numeric:normal;text-orientation:upright" xml:space="preserve">
+  <tspan id="resource" text-anchor="end" x="55" y="27.762367" fill="#ffffff" stroke-width="2.2">Epilog</tspan></text>
+ </g>
+</svg>
+</div>
+
+<div id="alert" class="alert hidealert">
+	
+	<img height="80px" style="vertical-align:bottom" src="MakeItPost.svg" />
+	<tspan id="alert_title" class="alert_title">Test</tspan>
+	<hr />
+	<tspan id="alert_text" class="alert_text">Test</tspan>
+</div>
+<div id="post" class="hidealert">
+
+
+	<img height="80px" style="vertical-align:bottom" src="MakeItAlert.svg" />
+	<tspan id="post_title" class="alert_title">Test</tspan>
+	<hr />
+	<tspan id="post_text" class="alert_text">Test</tspan>
+</div>
+<div id="resource_post" class="hidealert">
+	<img height="60px" style="vertical-align:bottom" src="MakeItCog.svg" />
+	<tspan id="resource_text" style="font-size:30px" class="alert_title">Test</tspan>
+</div>
+</body>
+</html
+
