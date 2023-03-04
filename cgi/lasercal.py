@@ -111,7 +111,7 @@ def get_calendar(cal_url,device,rundate=None):
         shortend = calend.strftime("%-I:%M %p")
         yday = calstart.timetuple().tm_yday
         nowday = now.timetuple().tm_yday
-        code = calstart.toordinal()
+        code = int(datetime.datetime.timestamp(calstart))
         if (yday == nowday):
             daystr = "Today"
         elif (yday == nowday+1):
