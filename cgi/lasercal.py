@@ -50,7 +50,7 @@ def get_calendar(cal_url,device,rundate=None):
   if rundate is not None:
     now = datetime.datetime.strptime(rundate,"%Y-%m-%d").replace(tzinfo=tz.gettz('America/New York'))
   else:
-    now = datetime.datetime.now().replace(tzinfo=tz.gettz('GMT'))
+    now = datetime.datetime.now().replace(tzinfo=tz.gettz('America/New York'))
 
   #now = now - datetime.timedelta(days=1)
   cutoff = now + datetime.timedelta(days=12)
