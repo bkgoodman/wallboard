@@ -7,7 +7,8 @@ from vars import *
 
 if __name__ == "__main__":
     out = {}
-    print ("Content-Type: application/json\n\n")
+    print ("Access-Control-Allow-Origin: *")
+    print ("Content-Type: text/html\n\n")
     r = requests.get(f"https://www.eventbriteapi.com/v3/organizations/{ORG_ID}/events/?status=live&expand=ticket_availability&token={TOKEN}")
     
     if ((r.status_code >= 200) and (r.status_code <= 299)):
@@ -26,7 +27,30 @@ if __name__ == "__main__":
                 if l:
                     if n not in out:
                         out[n]=[]
-                    out[n].append({"when":ds,"sold_out":s})
+                    out[n].append({"when":ds,"sold_out":s,"sold_out_text":"<b>Sold Out!</b>" if s else ""})
                 #print (json.dumps(x,indent=2))
 
-    print(json.dumps(out,indent=2))
+    print ("""
+    	<h2 style="margin:2px;text-align:center;color:#888"> Upcoming Classes</h2>
+	<table>
+    """)
+
+    for o in out:
+        print (f"""
+		<tr>
+			<th colspan=3>{o}</th>
+		</tr>
+        """)
+
+        for x in out[o]:
+            print (f"""
+            <tr>
+                <td />
+                <td>{x['when']}</td>
+                <td>{x['sold_out_text']}</td>
+            </tr>
+            """)
+    print ("""
+	</table>
+    """)
+
