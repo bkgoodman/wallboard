@@ -19,6 +19,17 @@ gameTimer = null;
 			console.log(c,chitData[c]);
 			setTimeout(startChit,250*c,c,chitData[c]);
 		}
+		setTimeout(function() {
+			var x = document.getElementById("class_list");
+			x.classList.remove("hidealert");
+			x.classList.add("showalert");
+		},30000);
+		setTimeout(function() {
+			var x = document.getElementById("class_list");
+			x.classList.add("hidealert");
+			x.classList.show("showalert");
+		},40000);
+
 	}
 
 	function gotAddr(data) {
@@ -36,6 +47,15 @@ gameTimer = null;
 		x.innerText = error;
 			}
 	}
+	function getClassData() {
+			console.log("Start Class Update")
+			fetch("https://auth.makeitlabs.com/cgi/evtbrite.py")
+			  .then((response) => response.text())
+			.then((data) => {console.log("Got Chit Data"); 
+					document.getElementById("class_list").innerHTML=data;
+					classData = data;})
+			.then((rejection) => { if (rejection != null) console.error(r)});
+	}
 	function getNewData() {
 			console.log("Start Update")
 			fetch("https://auth.makeitlabs.com/cgi/lasercal.py")
@@ -47,6 +67,7 @@ gameTimer = null;
 		console.log("Init");
 		//getNetworkAddress();
 		getNewData();
+		getClassData();
 		const mqttClient = mqtt.connect('ws://mqtt:8889/mqtt', {
 		  clientId: 'web-client',
 		});
@@ -73,7 +94,8 @@ gameTimer = null;
 		  console.log('Connect Done');
 		});
 			setInterval(getNewData,15*60*1000);
-			setInterval(updateChit,30*1000);
+			setInterval(getClassData,60*24*60*1000);
+			setInterval(updateChit,60*1000);
 
 		mqttClient.on('message', (topic, message) => {
 			  var j = JSON.parse(message.toString());
@@ -392,6 +414,29 @@ left:30px;
   border-radius:10px;
   background-color:#ff0000d0
 }
+#class_list {
+z-index:106;
+position:absolute;
+top:20px;
+left:30px;
+  box-shadow: 1px 1px 2px black, 
+  		0 0 25px black, 
+  		0 0 55px black, 
+		0 0 5px black;
+  padding:10;
+  border-radius:10px;
+  background-color:#ffffffD0
+}
+#class_list > table > tbody > tr > td:nth-child(2)  {
+	padding-right:20px;
+}
+#class_list > table > tbody > tr > th {
+	color:blue;
+	text-align:left
+}
+#class_list > table > tbody > tr > td:nth-child(1)  {
+	padding-right:20px;
+}
 #resource_post {
 z-index:105;
 position:absolute;
@@ -569,7 +614,6 @@ body {
 	<body id="body" onLoad="initDisplay();">
 <div id="backer" class="backerdisabled" style="background-color:red"></div>
 <video id="myvideo" width=100% height=100% style="z-index:0;position:absolute;top:0px;left:0px" autoplay loop preload playsinline muted>
-  <source src="LaserRoom.webm" />
   <source class="active" src="LaserRoom.webm" />
   Your browser does not support the video tag.
 </video>
@@ -640,6 +684,20 @@ body {
 <div id="resource_post" class="hidealert">
 	<img height="60px" style="vertical-align:bottom" src="MakeItCog.svg" />
 	<tspan id="resource_text" style="font-size:30px" class="alert_title">Test</tspan>
+</div>
+<div id="class_list" style="font-family:system-ui" class="hidealert">
+	<h2 style="margin:2px;text-align:center;color:#888"> Upcoming Classes</h2>
+	<table>
+		<tr>
+			<th colspan=3>This is a test row</th>
+		</tr>
+		<tr>
+			<td />
+			<td style="XXpadding-right:100px">This is when</td>
+			<td>Sold Out!</td>
+		</tr>
+
+	</table>
 </div>
 </body>
 </html
