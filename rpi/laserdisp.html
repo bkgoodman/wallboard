@@ -27,7 +27,7 @@ gameTimer = null;
 		setTimeout(function() {
 			var x = document.getElementById("class_list");
 			x.classList.add("hidealert");
-			x.classList.show("showalert");
+			x.classList.remove("showalert");
 		},40000);
 
 	}
@@ -417,8 +417,9 @@ left:30px;
 #class_list {
 z-index:106;
 position:absolute;
-top:20px;
-left:30px;
+transform:scale(1.5);
+top:10vh;
+left:10vw;
   box-shadow: 1px 1px 2px black, 
   		0 0 25px black, 
   		0 0 55px black, 
