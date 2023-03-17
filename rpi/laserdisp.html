@@ -68,7 +68,7 @@ gameTimer = null;
 		//getNetworkAddress();
 		getNewData();
 		getClassData();
-		const mqttClient = mqtt.connect('ws://10.0.0.59:8889/mqtt', {
+		const mqttClient = mqtt.connect('ws://mqtt:8889/mqtt', {
 		  clientId: 'web-client',
 		});
 
