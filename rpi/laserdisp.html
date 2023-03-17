@@ -68,7 +68,7 @@ gameTimer = null;
 		//getNetworkAddress();
 		getNewData();
 		getClassData();
-		const mqttClient = mqtt.connect('ws://mqtt:8889/mqtt', {
+		const mqttClient = mqtt.connect('ws://10.0.0.59:8889/mqtt', {
 		  clientId: 'web-client',
 		});
 
@@ -91,6 +91,8 @@ gameTimer = null;
 		  console.log('Connected to MQTT broker');
 		  mqttClient.subscribe('displayboard/read/laser/#');
 		  mqttClient.subscribe('displayboard/read/resource/post');
+		  mqttClient.subscribe('displayboard/read/status/laser-epilog');
+		  mqttClient.subscribe('displayboard/read/status/laser-mopa');
 		  console.log('Connect Done');
 		});
 			setInterval(getNewData,15*60*1000);
@@ -98,8 +100,14 @@ gameTimer = null;
 			setInterval(updateChit,60*1000);
 
 		mqttClient.on('message', (topic, message) => {
-			  var j = JSON.parse(message.toString());
+			  var j={};
 			  console.log(`Received message on ${topic}: ${message.toJSON()}`);
+			   try {
+				  if (message.toString() != "") {
+					j = JSON.parse(message.toString());
+				  }  
+			   } catch (error) {
+			   }
 		if (topic == "displayboard/read/laser/alert")  {
 			  var x = document.getElementById("alert");
 				document.getElementById('alert_title').innerHTML=j['Title'];
@@ -134,6 +142,26 @@ gameTimer = null;
 				console.log("SHOW POST",j);
 				x.classList.remove("hidealert");
 				x.classList.add("showalert");
+			}
+		} else if (topic == "displayboard/read/status/laser-mopa")  {
+			var x = document.getElementById("mopa_user");
+			if (j['text'] != null ) {
+				x.classList.remove("hidealert");
+				x.classList.add("showalert");
+				document.getElementById('mopa_user_text').innerHTML="MOPA: "+j['text'];
+			} else {
+				x.classList.add("hidealert");
+				x.classList.remove("showalert");
+			}
+		} else if (topic == "displayboard/read/status/laser-epilog")  {
+			var x = document.getElementById("epilog_user");
+			if (j['text'] != null ) {
+				x.classList.remove("hidealert");
+				x.classList.add("showalert");
+				document.getElementById('epilog_user_text').innerHTML="Epilog: "+j['text'];
+			} else {
+				x.classList.add("hidealert");
+				x.classList.remove("showalert");
 			}
 		} else if (topic == "displayboard/read/resource/post")  {
 			  var x = document.getElementById("resource_post");
@@ -438,6 +466,40 @@ left:10vw;
 #class_list > table > tbody > tr > td:nth-child(1)  {
 	padding-right:20px;
 }
+#epilog_user {
+z-index:105;
+position:absolute;
+bottom:110px;
+left:30px;
+  text-shadow: 1px 1px 2px black, 
+  		0 0 25px black, 
+  		0 0 55px black, 
+		0 0 5px black;
+  box-shadow: 1px 1px 2px black, 
+  		0 0 25px black, 
+  		0 0 55px black, 
+		0 0 5px black;
+  padding:10;
+  border-radius:10px;
+  background-color:#8f8fffD0
+}
+#mopa_user {
+z-index:105;
+position:absolute;
+bottom:200;
+left:30px;
+  text-shadow: 1px 1px 2px black, 
+  		0 0 25px black, 
+  		0 0 55px black, 
+		0 0 5px black;
+  box-shadow: 1px 1px 2px black, 
+  		0 0 25px black, 
+  		0 0 55px black, 
+		0 0 5px black;
+  padding:10;
+  border-radius:10px;
+  background-color:#8fff8fD0
+}
 #resource_post {
 z-index:105;
 position:absolute;
@@ -682,8 +744,16 @@ body {
 	<hr />
 	<tspan id="post_text" class="alert_text">Test</tspan>
 </div>
+<div id="mopa_user" class="hidealert">
+	<img height="40px" style="vertical-align:bottom" src="MakeItCog.svg" />
+	<tspan id="mopa_user_text" style="font-size:30px" class="alert_title">Test</tspan>
+</div>
+<div id="epilog_user" class="hidealert">
+	<img height="40px" style="vertical-align:bottom" src="MakeItCog.svg" />
+	<tspan id="epilog_user_text" style="font-size:30px" class="alert_title">Test</tspan>
+</div>
 <div id="resource_post" class="hidealert">
-	<img height="60px" style="vertical-align:bottom" src="MakeItCog.svg" />
+	<img height="40px" style="vertical-align:bottom" src="MakeItCog.svg" />
 	<tspan id="resource_text" style="font-size:30px" class="alert_title">Test</tspan>
 </div>
 <div id="class_list" style="font-family:system-ui" class="hidealert">
