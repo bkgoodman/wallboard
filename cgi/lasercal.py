@@ -10,9 +10,11 @@ from dateutil import tz
 
 MOPA_URL="https://calendar.google.com/calendar/ical/c_1886b6dkec306jdkk38lsbpbejeo8%40resource.calendar.google.com/private-0887c278adb9b128c9b0435325d2cac9/basic.ics"
 EPILOG_URL="https://calendar.google.com/calendar/ical/makeitlabs.com_3133373236393938363631%40resource.calendar.google.com/private-d118fdab09a69377936a3e516b25ae45/basic.ics"
+SHOPBOT_URL="https://calendar.google.com/calendar/ical/c_188ajec7o5sd8hnglghkkj80c1jh0%40resource.calendar.google.com/private-496ceab1e824edaedddcfe393de00f6a/basic.ics"
 
 EPILOG_ID="mailto:makeitlabs.com_3133373236393938363631@resource.calendar.google.com"
 MOPA_ID="mailto:c_1886b6dkec306jdkk38lsbpbejeo8@resource.calendar.google.com"
+SHOPBOT_ID="c_188ajec7o5sd8hnglghkkj80c1jh0@resource.calendar.google.com"
 
 # Parameters({'CUTYPE': 'RESOURCE', 'ROLE': 'REQ-PARTICIPANT', 'PARTSTAT': 'ACCEPTED', 'CN': 'MiL-1-Center-Laser room - MOPA (2)', 'X-NUM-GUESTS': '0'})
 
@@ -149,6 +151,8 @@ def get_calendar(cal_url,device,rundate=None):
                     reserved['MOPA']=True
                 if (c == EPILOG_ID) and (c.params['PARTSTAT'] == 'ACCEPTED'):
                     reserved['EPILOG']=True
+                if (c == SHOPBOT_ID) and (c.params['PARTSTAT'] == 'ACCEPTED'):
+                    reserved['SHOPBOT']=True
 	
             """
             print ("SUMMARY",component['SUMMARY'])
@@ -172,6 +176,8 @@ def get_calendar(cal_url,device,rundate=None):
                 device = "MOPA"
             elif 'EPILOG' in reserved:
                 device = "Epilog"
+            elif 'SHOPBOT' in reserved:
+                device = "Shopbot"
             entries.append ({
                 "SUMMARY":str(component['SUMMARY']),
                 "START":calstart,
@@ -299,13 +305,20 @@ if __name__ == "__main__":
     print ("Access-Control-Allow-Origin: *")
     print("Content-type: application/json\n\n")
     e = []
-    cal = get_calendar(MOPA_URL,"MOPA")
-    #print ("MOPA:",cal['entries'])
-    mopa = cal['entries']
-    cal = get_calendar(EPILOG_URL,"EPILOG")
-    #print ("EPILOG:",cal['entries'])
-    epi = cal['entries']
-    e = mopa + epi
+    calname=None
+    try:
+        if ('QUERY_STRING' in os.environ):
+            (k,v) = os.environ['QUERY_STRING'].split("=")
+            if (k=="cal"):
+                calname = v
+    except:
+        calname=None
+
+    if (calname is None) or (calname == "laser"):
+        e += get_calendar(MOPA_URL,"MOPA")['entries']
+        e += get_calendar(EPILOG_URL,"EPILOG")['entries']
+    elif (calname == "shopbot"):
+        e += get_calendar(SHOPBOT_URL,"SHOPBOT")['entries']
 
     # COLLAPSE DUPLICATES!!
 
@@ -322,6 +335,9 @@ if __name__ == "__main__":
     for x in e:
         if 'DROP' not in x:
             out.append(x)
+
+    # SORT
+
     res = []
     for x in sorted(out,key=lambda i:i['CODE'])[0:4]:
         res.append(x)

@@ -3,9 +3,24 @@
 import requests
 import json
 import datetime
+import os
 from vars import *
 
 if __name__ == "__main__":
+    calname=None
+    try:
+        if ('QUERY_STRING' in os.environ):
+            (k,v) = os.environ['QUERY_STRING'].split("=")
+            if (k=="cal"):
+                calname = v
+    except:
+        calname=None
+
+    if calname is None or calname=="laser":
+        keywords=["MOPA","Epilog","Laser"]
+    if calname == "shopbot":
+        keywords=["Shopbot"]
+
     out = {}
     print ("Access-Control-Allow-Origin: *")
     print ("Content-Type: text/html\n\n")
@@ -16,7 +31,10 @@ if __name__ == "__main__":
 
         for x in j['events']:
             n = x['name']['text']
-            if "MOPA " in n or "Epilog " in n or "Laser" in n:
+            found = False
+            for xx in keywords:
+                if xx in n: found=True
+            if found == True:
                 t =  (x['start']['local'])
                 # 2023-03-19T10:00:00
                 d = datetime.datetime.strptime(t,"%Y-%m-%dT%H:%M:%S")
