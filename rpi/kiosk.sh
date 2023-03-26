@@ -1,6 +1,6 @@
 #!/bin/sh
 export DISPLAY=:0
-xset -dpms
+#xset -dpms
 xset s off
 xset s noblank
 unclutter &
