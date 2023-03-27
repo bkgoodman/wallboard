@@ -73,7 +73,7 @@ gameTimer = null;
 		getNewData();
 		getClassData();
 		const mqttClient = mqtt.connect('ws://mqtt:8889/mqtt', {
-		  clientId: 'web-client',
+		  clientId: 'wallboard-shopbot',
 		});
 
 		mqttClient.on('close', () => {
