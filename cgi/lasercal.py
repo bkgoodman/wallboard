@@ -206,7 +206,10 @@ def get_calendar(cal_url,device,rundate=None):
              weeks = rrule['COUNT'][0]
 
         for weekno in range(0,weeks):
-          short = calstart.strftime("%b-%d %H:%M ")+component['SUMMARY']
+          sss = ""
+          if 'SUMMARY' in component:
+              sss = component['SUMMARY']
+          short = calstart.strftime("%b-%d %H:%M ")+sss
           if (calstart <= weekend) and (weekstart < calend):
             #print "THISWEEK calendar",calstart,calend
             #print "THISWEEK curweel",weekstart,weekend
