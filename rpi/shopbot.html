@@ -53,7 +53,7 @@ gameTimer = null;
 	}
 	function getClassData() {
 			console.log("Start Class Update")
-			fetch("https://auth.makeitlabs.com/cgi/evtbrite.py?cal=shopbot")
+			fetch("https://auth.makeitlabs.com/cgi/evtbrite.py?cal=metalshop")
 			  .then((response) => response.text())
 			.then((data) => {console.log("Got Chit Data"); 
 					document.getElementById("class_list").innerHTML=data;
@@ -62,7 +62,7 @@ gameTimer = null;
 	}
 	function getNewData() {
 			console.log("Start Update")
-			fetch("https://auth.makeitlabs.com/cgi/gencal.py?cal=shopbot")
+			fetch("https://auth.makeitlabs.com/cgi/gencal.py?cal=metalshop")
 			  .then((response) => response.json())
 			.then((data) => {console.log("Got Chit Data"); chitData = data;})
 			.then((rejection) => { if (rejection != null) console.error(r)});
@@ -73,7 +73,7 @@ gameTimer = null;
 		getNewData();
 		getClassData();
 		const mqttClient = mqtt.connect('ws://mqtt:8889/mqtt', {
-		  clientId: 'wallboard-shopbot',
+		  clientId: 'wallboard-metalshop',
 		});
 
 		mqttClient.on('close', () => {
@@ -93,9 +93,9 @@ gameTimer = null;
 		});
 		mqttClient.on('connect', () => {
 		  console.log('Connected to MQTT broker');
-		  mqttClient.subscribe('displayboard/read/shopbot/#');
+		  mqttClient.subscribe('displayboard/read/metalshop/#');
 		  mqttClient.subscribe('displayboard/read/resource/post');
-		  mqttClient.subscribe('displayboard/read/status/shopbot');
+		  mqttClient.subscribe('displayboard/read/status/metalshop');
 		  console.log('Connect Done');
 		});
 			setInterval(getNewData,15*60*1000);
@@ -111,7 +111,7 @@ gameTimer = null;
 				  }  
 			   } catch (error) {
 			   }
-		if (topic == "displayboard/read/shopbot/alert")  {
+		if (topic == "displayboard/read/metalshop/alert")  {
 			  var x = document.getElementById("alert");
 				document.getElementById('alert_title').innerHTML=j['Title'];
 				document.getElementById('alert_text').innerHTML=j['Message'];
@@ -133,7 +133,7 @@ gameTimer = null;
 			//setInterval(getNewData,15*60*1000);
 			//setInterval(updateChit,60*1000);
 		}
-		else if (topic == "displayboard/read/shopbot/post")  {
+		else if (topic == "displayboard/read/metalshop/post")  {
 			if ((j['Title'] == "") && ( j['Message'] == "")) {
 			  var x = document.getElementById("post");
 				x.classList.add("hidealert");
@@ -146,7 +146,7 @@ gameTimer = null;
 				x.classList.remove("hidealert");
 				x.classList.add("showalert");
 			}
-		} else if (topic == "displayboard/read/status/shopbot")  {
+		} else if (topic == "displayboard/read/status/metalshop")  {
 			var x = document.getElementById("mopa_user");
 			if (j['text'] != null ) {
 				x.classList.remove("hidealert");
@@ -670,7 +670,7 @@ body {
 	<body id="body" onLoad="initDisplay();">
 <div id="backer" class="backerdisabled" style="background-color:red"></div>
 <video id="myvideo" width=100% height=100% style="z-index:0;position:absolute;top:0px;left:0px" autoplay loop preload playsinline muted>
-  <source class="active" src="Shopbot.mp4" />
+  <source class="active" src="MachineShop.mp4" />
   Your browser does not support the video tag.
 </video>
 <!--

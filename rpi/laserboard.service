@@ -5,7 +5,7 @@ After=multi-user.target
 [Service]
 Type=idle
 User=bkg
-ExecStart=/bin/bash /home/bkg/kiosk.sh
+ExecStart=/bin/bash /home/bkg/wallboard/kiosk.sh
 RestartSec=60s
 
 [Install]
