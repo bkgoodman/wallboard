@@ -110,6 +110,7 @@ gameTimer = null;
 		  mqttClient.subscribe('displayboard/read/status/tormach-1100');
 		  mqttClient.subscribe('displayboard/read/status/lathe-prototrak');
 		  mqttClient.subscribe('displayboard/read/status/mill-prototrak');
+		  mqttClient.subscribe('speakbot');
 		  console.log('Connect Done');
 		});
 			setInterval(getNewData,15*60*1000);
