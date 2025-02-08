@@ -572,6 +572,55 @@ left:30px;
   border-radius:10px;
   background-color:#ffffffD0
 }
+
+.outer {
+  display: table;
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+}
+
+.middle {
+  display: table-cell;
+  vertical-align: middle;
+}
+
+.inner {
+  margin-left: auto;
+  margin-right: auto;
+  width: 75vw;
+}
+
+#speakbot {
+z-index:999;
+#position:absolute;
+#top:20px;
+#left:30px;
+  text-shadow: 1px 1px 2px black, 
+  		0 0 25px black, 
+  		0 0 55px black, 
+		0 0 5px black;
+  box-shadow: 1px 1px 2px black, 
+  		0 0 25px black, 
+  		0 0 55px black, 
+		0 0 5px black;
+  padding:25px;
+  border-radius:10px;
+  background-color:#00FFFFf0;
+    animation-name: speakbot;
+	animation-duration: 6s;
+animation-iteration-count: infinite;
+}
+@keyframes speakbot {
+	0%   {background-color:#00fffff0;}
+	40%   {background-color:#00fffff0;}
+	50%   {background-color:#ff0000f0;}
+	60%   {background-color:#00fffff0;}
+	100%   {background-color:#00fffff0;}
+}
+
 #alert {
 z-index:105;
 position:absolute;
