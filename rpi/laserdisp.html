@@ -21,13 +21,17 @@ gameTimer = null;
 		}
 		setTimeout(function() {
 			var x = document.getElementById("class_list");
-			x.classList.remove("hidealert");
-			x.classList.add("showalert");
+			if (x.innerHTML != "") {
+				x.classList.remove("hidealert");
+				x.classList.add("showalert");
+			}
 		},30000);
 		setTimeout(function() {
 			var x = document.getElementById("class_list");
-			x.classList.add("hidealert");
-			x.classList.remove("showalert");
+			if (x.innerHTML != "") {
+				x.classList.add("hidealert");
+				x.classList.remove("showalert");
+			}
 		},40000);
 
 	}
@@ -63,6 +67,18 @@ gameTimer = null;
 			.then((data) => {console.log("Got Chit Data"); chitData = data;})
 			.then((rejection) => { if (rejection != null) console.error(r)});
 	}
+    function showSpeakbot(text) {
+      var x = document.getElementById("speakbot");
+                    console.log("Show speakbot");
+        x.classList.remove("hidealert");
+        x.classList.add("showalert");
+        document.getElementById('speakbot_text').innerHTML=text;
+        setTimeout(function() {
+          var x = document.getElementById("speakbot");
+            x.classList.add("hidealert");
+            x.classList.remove("showalert");
+        },10*60*1000);
+    }
 	function initDisplay() {
 		console.log("Init");
 		//getNetworkAddress();
@@ -89,6 +105,7 @@ gameTimer = null;
 		});
 		mqttClient.on('connect', () => {
 		  console.log('Connected to MQTT broker');
+		  mqttClient.subscribe('speakbot');
 		  mqttClient.subscribe('displayboard/read/laser/#');
 		  mqttClient.subscribe('displayboard/read/resource/post');
 		  mqttClient.subscribe('displayboard/read/status/laser-epilog');
@@ -153,6 +170,11 @@ gameTimer = null;
 				x.classList.add("hidealert");
 				x.classList.remove("showalert");
 			}
+		} else if (topic == "speakbot")  {
+			var x = document.getElementById("speakbot_text");
+			if (j['text'] != null ) {
+               showSpeakbot(j['text'])
+			} 
 		} else if (topic == "displayboard/read/status/laser-epilog")  {
 			var x = document.getElementById("epilog_user");
 			if (j['text'] != null ) {
@@ -185,7 +207,9 @@ gameTimer = null;
 			stopGame();
 		}
 		if (evt.key=="1"){
-			startChit(1);
+                        startChit(1,{
+                                        "ORGANIZER":"Brad"
+                                });
 		}
 		if (evt.key=="2"){
 			startChit(2);
@@ -198,6 +222,9 @@ gameTimer = null;
 		}
 		if (evt.key=="5") {
 			getNewData();
+		}
+		if (evt.key=="s") {
+			showSpeakbot("This is a test of the emergency");
 		}
 		if (evt.key=="6"){
 			updateChit();
@@ -517,6 +544,54 @@ left:30px;
   border-radius:10px;
   background-color:#ffffffD0
 }
+
+.outer {
+  display: table;
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+}
+
+.middle {
+  display: table-cell;
+  vertical-align: middle;
+}
+
+.inner {
+  margin-left: auto;
+  margin-right: auto;
+  width: 75vw;
+}
+
+#speakbot {
+z-index:999;
+#position:absolute;
+#top:20px;
+#left:30px;
+  text-shadow: 1px 1px 2px black, 
+  		0 0 25px black, 
+  		0 0 55px black, 
+		0 0 5px black;
+  box-shadow: 1px 1px 2px black, 
+  		0 0 25px black, 
+  		0 0 55px black, 
+		0 0 5px black;
+  padding:25px;
+  border-radius:10px;
+  background-color:#00FFFFf0;
+    animation-name: speakbot;
+	animation-duration: 6s;
+animation-iteration-count: infinite;
+}
+@keyframes speakbot {
+	0%   {background-color:#00fffff0;}
+	40%   {background-color:#00fffff0;}
+	50%   {background-color:#ff0000f0;}
+	60%   {background-color:#00fffff0;}
+	100%   {background-color:#00fffff0;}
+}
 #alert {
 z-index:105;
 position:absolute;
@@ -586,10 +661,10 @@ left:30px;
 }
 
 @keyframes chit {
-	0%   {opacity:0%;left: 200vw;}
-	10%  {opacity:100%;left: 40vw;}
-	90%  {opacity:100%;left: 40vw;}
-	100%  {opacity:0%;left 200vw;}
+	0%   {opacity:0%;left: 250vw;}
+	10%  {opacity:100%;left: 30vw;}
+	90%  {opacity:100%;left: 30vw;}
+	100%  {opacity:0%;left 250vw;}
 }
 .chit {
 	opacity: 0%;
@@ -598,7 +673,7 @@ left:30px;
 	animation-iteration-count: 1;
 	width: 100%;
 	position: fixed;
-	left: 200vw;
+	left: 250vw;
 
 }
 .newbestshow {
@@ -690,7 +765,7 @@ body {
 
 
 <div id="chit" class="chit">
-	<svg width="50%" xxheight="100%"  style="z-index:99;position:relative;top:0px;left:0px" version="1.1" viewBox="0 0 198.99 33.382" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<svg width="70%" xxheight="100%"  style="z-index:99;position:relative;top:0px;left:0px" version="1.1" viewBox="0 0 255 33.382" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
  <defs>
   <linearGradient id="linearGradient7722" x1="45.75" x2="45.75" y1="82.252" y2="106.83" gradientTransform="translate(-26.652 -76.367)" gradientUnits="userSpaceOnUse">
    <stop id="color3" stop-color="#0000ff" offset="0"/>
@@ -703,28 +778,53 @@ body {
  </defs>
  <g fill-rule="evenodd" stroke-linecap="round" stroke-linejoin="round">
   <g stroke-width="2.2">
-   <path d="m7.8906 0.34776c-4.1037 0-7.5313 3.0295-7.5313 6.8848v17.428c0 3.8553 3.4276 6.8848 7.5313 6.8848h183.43c4.1037 0 7.5293-3.0298 7.5293-6.8848v-17.428c0-3.8549-3.4256-6.8848-7.5293-6.8848z" fill-opacity=".99829"/>
-   <rect x="1.3324" y="1.3198" width="196.54" height="29.253" rx="6.5573" ry="5.9128" fill="#fff" fill-opacity=".99829"/>
-   <path d="m6.9899 1.3197c-3.1341 0-5.6575 2.6372-5.6577 5.9128v17.427c0 3.2757 2.5234 5.9123 5.6575 5.9123h53.977v-29.252z" fill="url(#linearGradient7722)"/>
+   <path d="
+        m 7.8906,0.34776
+        c -4.1037,0 -7.5313,3.0295 -7.5313,6.8848
+        v 17.428
+        c 0,3.8553 3.4276,6.8848 7.5313,6.8848
+        l 236.62872,0
+        c 4.1037,0 8.09958,-3.0298 8.09958,-6.8848
+        v -17.428
+        c 0,-3.8549 -3.99588,-6.8848 -8.09958,-6.8848
+        z
+           " fill-opacity=".99829"/>
+   <rect x="1.3324" y="1.3198" width="250" height="29.253" rx="6.5573" ry="5.9128" fill="#fff" fill-opacity=".99829"/>
+   <path id="CHIT_BLUELEFT" d="
+m 6.9899,1.3197
+c -3.1341,0 -5.6575,2.6372 -5.6577,5.9128
+v 17.427
+c 0,3.2757 2.5234,5.9123 5.6575,5.9123
+l 63.427309,0
+V 1.3198
+Z"
+
+   fill="url(#linearGradient7722)"/>
   </g>
   <g fill-opacity=".99829" font-family="'Eras Medium ITC'">
    <text x="31.391813" y="10.497421" fill="#ffffff" font-size="8.181px" stroke-width="2.2" style="font-variant-caps:normal;font-variant-east-asian:normal;font-variant-ligatures:normal;font-variant-numeric:normal;text-orientation:upright" xml:space="preserve">
-   <tspan id="dow" text-anchor="middle" x="34" y="10.497421" fill="#ffffff" font-family="'Eras Medium ITC'" font-size="8.181px" stroke-width="2.2" text-align="center" text-anchor="middle" style="font-variant-caps:normal;font-variant-east-asian:normal;font-variant-ligatures:normal;font-variant-numeric:normal">MON</tspan>
+   <tspan id="dow" text-anchor="middle" x="39" y="10.497421" fill="#ffffff" font-family="'Eras Medium ITC'" font-size="8.181px" stroke-width="2.2" text-align="center" text-anchor="middle" style="font-variant-caps:normal;font-variant-east-asian:normal;font-variant-ligatures:normal;font-variant-numeric:normal">MON</tspan>
    </text>
 
    <text x="28.217127" y="18.313812" fill="#ffffff" font-size="7px" stroke-width="2.2" style="font-variant-caps:normal;font-variant-east-asian:normal;font-variant-ligatures:normal;font-variant-numeric:normal;text-orientation:upright" xml:space="preserve">
-   <tspan id="time" text-anchor="middle" x="34" y="18.313812" fill="#ffffff" font-family="'Eras Medium ITC'" font-size="7px" stroke-width="2.2" text-align="center" text-anchor="middle" style="font-variant-caps:normal;font-variant-east-asian:normal;font-variant-ligatures:normal;font-variant-numeric:normal">12:00  - 1PM</tspan>
+   <tspan id="time" text-anchor="middle" x="39" y="18.313812" fill="#ffffff" font-family="'Eras Medium ITC'" font-size="7px" stroke-width="2.2" text-align="center" text-anchor="middle" style="font-variant-caps:normal;font-variant-east-asian:normal;font-variant-ligatures:normal;font-variant-numeric:normal">12:00  - 1PM</tspan>
    </text>
 
-   <text><tspan id="title" x="63" y="12" fill="#000000" font-family="'Eras Medium ITC'" font-size="12px" stroke-width="2.2" text-align="left" text-anchor="left" style="font-variant-caps:normal;font-variant-east-asian:normal;font-variant-ligatures:normal;font-variant-numeric:normal">TESTING</tspan>
+   <text><tspan id="title" x="73" y="12" fill="#000000" font-family="'Eras Medium ITC'" font-size="12px" stroke-width="2.2" text-align="left" text-anchor="left" style="font-variant-caps:normal;font-variant-east-asian:normal;font-variant-ligatures:normal;font-variant-numeric:normal">Event</tspan>
    </text>
 
-   <text><tspan id="person" x="190" y="28" fill="#d0d0d0" font-family="sans-serif" text-anchor="end" font-size="12px" stroke-width="2.2" text-align="center" text-anchor="middle" style="font-variant-caps:normal;font-variant-east-asian:normal;font-variant-ligatures:normal;font-variant-numeric:normal">TESTING</tspan>
+   <text><tspan id="person" x="245" y="28" fill="#d0d0d0" font-family="sans-serif" text-anchor="end" font-size="12px" stroke-width="2.2" text-align="center" text-anchor="middle" style="font-variant-caps:normal;font-variant-east-asian:normal;font-variant-ligatures:normal;font-variant-numeric:normal">Name</tspan>
    </text>
   </g>
-  <path d="m1.3324 21.46v3.2003c0 3.2757 2.5234 5.9123 5.6575 5.9123h53.978v-9.1126z" fill="url(#linearGradient7817)" stroke-width="2.2"/>
+  <path id="CHIT_LITTLEBLUE_LEFT" d="m 1.3324,21.46
+v 3.2003
+c 0,3.2757 2.5234,5.9123 5.6575,5.9123
+l 63.427109,-8e-4
+v -9.1126
+z"
+  fill="url(#linearGradient7817)" stroke-width="2.2"/>
   <text x="47" y="27" fill="#ffffff" fill-opacity=".99829" font-family="'Eras Medium ITC'" font-size="6.5082px" stroke-width="2.2" style="font-variant-caps:normal;font-variant-east-asian:normal;font-variant-ligatures:normal;font-variant-numeric:normal;text-orientation:upright" xml:space="preserve">
-  <tspan id="resource" text-anchor="end" x="55" y="27.762367" fill="#ffffff" stroke-width="2.2">Epilog</tspan></text>
+  <tspan id="resource" text-anchor="end" x="65" y="27.762367" fill="#ffffff" stroke-width="2.2">Epilog</tspan></text>
  </g>
 </svg>
 </div>
@@ -735,6 +835,19 @@ body {
 	<tspan id="alert_title" class="alert_title">Test</tspan>
 	<hr />
 	<tspan id="alert_text" class="alert_text">Test</tspan>
+</div>
+
+<div class="outer">
+  <div class="middle">
+    <div class="inner">
+        <div id="speakbot" class="alert hidealert">
+            <img height="80px" style="vertical-align:bottom" src="MakeItPost.svg" />
+            <tspan id="speakbot_title" class="alert_title">Announcement</tspan>
+            <hr />
+            <tspan id="speakbot_text" class="alert_text">Test</tspan>
+        </div>
+    </div>
+  </div>
 </div>
 <div id="post" class="hidealert">
 

@@ -33,6 +33,7 @@ gameTimer = null;
 				x.classList.remove("showalert");
 			}
 		},40000);
+
 	}
 
 	function gotAddr(data) {
@@ -52,7 +53,7 @@ gameTimer = null;
 	}
 	function getClassData() {
 			console.log("Start Class Update")
-			fetch("https://auth.makeitlabs.com/cgi/evtbrite.py?cal=shopbot")
+			fetch("https://auth.makeitlabs.com/cgi/evtbrite.py?cal=metalshop")
 			  .then((response) => response.text())
 			.then((data) => {console.log("Got Chit Data"); 
 					document.getElementById("class_list").innerHTML=data;
@@ -61,7 +62,7 @@ gameTimer = null;
 	}
 	function getNewData() {
 			console.log("Start Update")
-			fetch("https://auth.makeitlabs.com/cgi/gencal.py?cal=shopbot")
+			fetch("https://auth.makeitlabs.com/cgi/gencal.py?cal=metalshop")
 			  .then((response) => response.json())
 			.then((data) => {console.log("Got Chit Data"); chitData = data;})
 			.then((rejection) => { if (rejection != null) console.error(r)});
@@ -84,7 +85,7 @@ gameTimer = null;
 		getNewData();
 		getClassData();
 		const mqttClient = mqtt.connect('ws://mqtt:8889/mqtt', {
-		  clientId: 'wallboard-shopbot',
+		  clientId: 'wallboard-metalshop',
 		});
 
 		mqttClient.on('close', () => {
@@ -104,9 +105,11 @@ gameTimer = null;
 		});
 		mqttClient.on('connect', () => {
 		  console.log('Connected to MQTT broker');
-		  mqttClient.subscribe('displayboard/read/shopbot/#');
+		  mqttClient.subscribe('displayboard/read/metalshop/#');
 		  mqttClient.subscribe('displayboard/read/resource/post');
-		  mqttClient.subscribe('displayboard/read/status/shopbot-cnc');
+		  mqttClient.subscribe('displayboard/read/status/tormach-1100');
+		  mqttClient.subscribe('displayboard/read/status/lathe-prototrak');
+		  mqttClient.subscribe('displayboard/read/status/mill-prototrak');
 		  mqttClient.subscribe('speakbot');
 		  console.log('Connect Done');
 		});
@@ -123,7 +126,7 @@ gameTimer = null;
 				  }  
 			   } catch (error) {
 			   }
-		if (topic == "displayboard/read/shopbot/alert")  {
+		if (topic == "displayboard/read/metalshop/alert")  {
 			  var x = document.getElementById("alert");
 				document.getElementById('alert_title').innerHTML=j['Title'];
 				document.getElementById('alert_text').innerHTML=j['Message'];
@@ -145,7 +148,7 @@ gameTimer = null;
 			//setInterval(getNewData,15*60*1000);
 			//setInterval(updateChit,60*1000);
 		}
-		else if (topic == "displayboard/read/shopbot/post")  {
+		else if (topic == "displayboard/read/metalshop/post")  {
 			if ((j['Title'] == "") && ( j['Message'] == "")) {
 			  var x = document.getElementById("post");
 				x.classList.add("hidealert");
@@ -158,12 +161,22 @@ gameTimer = null;
 				x.classList.remove("hidealert");
 				x.classList.add("showalert");
 			}
-		} else if (topic == "displayboard/read/status/shopbot-cnc")  {
-			var x = document.getElementById("mopa_user");
+		} else if (topic == "displayboard/read/status/mill-prototrak")  {
+			var x = document.getElementById("mill_prototrak_user");
 			if (j['text'] != null ) {
 				x.classList.remove("hidealert");
 				x.classList.add("showalert");
-				document.getElementById('mopa_user_text').innerHTML="Shopbot: "+j['text'];
+				document.getElementById('mill_prototrak_user_text').innerHTML="Bridgeport: "+j['text'];
+			} else {
+				x.classList.add("hidealert");
+				x.classList.remove("showalert");
+			}
+		} else if (topic == "displayboard/read/status/lathe-prototrak")  {
+			var x = document.getElementById("lathe_prototrak_user");
+			if (j['text'] != null ) {
+				x.classList.remove("hidealert");
+				x.classList.add("showalert");
+				document.getElementById('lathe_prototrak_user_text').innerHTML="Lathe: "+j['text'];
 			} else {
 				x.classList.add("hidealert");
 				x.classList.remove("showalert");
@@ -173,6 +186,16 @@ gameTimer = null;
 			if (j['text'] != null ) {
                showSpeakbot(j['text'])
 			} 
+		} else if (topic == "displayboard/read/status/tormach-1100")  {
+			var x = document.getElementById("tormach_user");
+			if (j['text'] != null ) {
+				x.classList.remove("hidealert");
+				x.classList.add("showalert");
+				document.getElementById('tormach_user_text').innerHTML="Tormach: "+j['text'];
+			} else {
+				x.classList.add("hidealert");
+				x.classList.remove("showalert");
+			}
 		} else if (topic == "displayboard/read/resource/post")  {
 			  var x = document.getElementById("resource_post");
 				x.classList.remove("hidealert");
@@ -481,7 +504,7 @@ left:10vw;
 #class_list > table > tbody > tr > td:nth-child(1)  {
 	padding-right:20px;
 }
-#epilog_user {
+#lathe_prototrak_user {
 z-index:105;
 position:absolute;
 bottom:110px;
@@ -498,7 +521,7 @@ left:30px;
   border-radius:10px;
   background-color:#8f8fffD0
 }
-#mopa_user {
+#mill_prototrak_user {
 z-index:105;
 position:absolute;
 bottom:200;
@@ -514,6 +537,23 @@ left:30px;
   padding:10;
   border-radius:10px;
   background-color:#8fff8fD0
+}
+#tormach_user {
+z-index:105;
+position:absolute;
+bottom:310px;
+left:30px;
+  text-shadow: 1px 1px 2px black, 
+  		0 0 25px black, 
+  		0 0 55px black, 
+		0 0 5px black;
+  box-shadow: 1px 1px 2px black, 
+  		0 0 25px black, 
+  		0 0 55px black, 
+		0 0 5px black;
+  padding:10;
+  border-radius:10px;
+  background-color:#8f8fffD0
 }
 #resource_post {
 z-index:105;
@@ -531,54 +571,6 @@ left:30px;
   padding:10;
   border-radius:10px;
   background-color:#ffffffD0
-}
-
-.outer {
-  display: table;
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  width: 100%;
-}
-
-.middle {
-  display: table-cell;
-  vertical-align: middle;
-}
-
-.inner {
-  margin-left: auto;
-  margin-right: auto;
-  width: 75vw;
-}
-
-#speakbot {
-z-index:999;
-#position:absolute;
-#top:20px;
-#left:30px;
-  text-shadow: 1px 1px 2px black, 
-  		0 0 25px black, 
-  		0 0 55px black, 
-		0 0 5px black;
-  box-shadow: 1px 1px 2px black, 
-  		0 0 25px black, 
-  		0 0 55px black, 
-		0 0 5px black;
-  padding:25px;
-  border-radius:10px;
-  background-color:#00FFFFf0;
-    animation-name: speakbot;
-	animation-duration: 6s;
-animation-iteration-count: infinite;
-}
-@keyframes speakbot {
-	0%   {background-color:#00fffff0;}
-	40%   {background-color:#00fffff0;}
-	50%   {background-color:#ff0000f0;}
-	60%   {background-color:#00fffff0;}
-	100%   {background-color:#00fffff0;}
 }
 #alert {
 z-index:105;
@@ -740,7 +732,7 @@ body {
 	<body id="body" onLoad="initDisplay();">
 <div id="backer" class="backerdisabled" style="background-color:red"></div>
 <video id="myvideo" width=100% height=100% style="z-index:0;position:absolute;top:0px;left:0px" autoplay loop preload playsinline muted>
-  <source class="active" src="Shopbot.mp4" />
+  <source class="active" src="MachineShop.mp4" />
   Your browser does not support the video tag.
 </video>
 <!--
@@ -845,13 +837,17 @@ z"
 	<hr />
 	<tspan id="post_text" class="alert_text">Test</tspan>
 </div>
-<div id="mopa_user" class="hidealert">
+<div id="mill_prototrak_user" class="hidealert">
 	<img height="40px" style="vertical-align:bottom" src="MakeItCog.svg" />
-	<tspan id="mopa_user_text" style="font-size:30px" class="alert_title">Test</tspan>
+	<tspan id="mill_prototrak_user_text" style="font-size:30px" class="alert_title">Test</tspan>
 </div>
-<div id="epilog_user" class="hidealert">
+<div id="lathe_prototrak_user" class="hidealert">
 	<img height="40px" style="vertical-align:bottom" src="MakeItCog.svg" />
-	<tspan id="epilog_user_text" style="font-size:30px" class="alert_title">Test</tspan>
+	<tspan id="lathe_prototrak_user_text" style="font-size:30px" class="alert_title">Test</tspan>
+</div>
+<div id="tormach_user" class="hidealert">
+	<img height="40px" style="vertical-align:bottom" src="MakeItCog.svg" />
+	<tspan id="tormach_user_text" style="font-size:30px" class="alert_title">Test</tspan>
 </div>
 <div id="resource_post" class="hidealert">
 	<img height="40px" style="vertical-align:bottom" src="MakeItCog.svg" />
