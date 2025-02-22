@@ -170,7 +170,7 @@ gameTimer = null;
 			}
 		} else if (topic == "speakbot")  {
 			var x = document.getElementById("speakbot_text");
-			if (j['text'] != null ) {
+			if ((j['text'] != null ) && (j['command'] != "/clear")) {
                showSpeakbot(j['text'])
 			} 
 		} else if (topic == "displayboard/read/resource/post")  {
