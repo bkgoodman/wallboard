@@ -172,8 +172,8 @@ gameTimer = null;
 			}
 		} else if (topic == "speakbot")  {
 			var x = document.getElementById("speakbot_text");
-			if (j['text'] != null ) {
-               showSpeakbot(j['text'])
+			if ((j['text'] != null ) && (j['command'] != "/clear")) {
+               				showSpeakbot(j['text'])
 			} 
 		} else if (topic == "displayboard/read/status/laser-epilog")  {
 			var x = document.getElementById("epilog_user");
@@ -752,7 +752,7 @@ body {
 	<body id="body" onLoad="initDisplay();">
 <div id="backer" class="backerdisabled" style="background-color:red"></div>
 <video id="myvideo" width=100% height=100% style="z-index:0;position:absolute;top:0px;left:0px" autoplay loop preload playsinline muted>
-  <source class="active" src="LaserRoom.webm" />
+  <source class="active" src="LaserRoom.mp4" />
   Your browser does not support the video tag.
 </video>
 <!--
