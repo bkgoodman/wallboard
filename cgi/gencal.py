@@ -29,6 +29,7 @@ PROTOTRAK_ID="mailto:c_1889s1vmc5pomj84ltqr9eibcfa2k@resource.calendar.google.co
 JETLATHE_ID="mailto:c_18810t9nfo22qhp9h4fm2ngv5flt0@resource.calendar.google.com"
 BRIDGEPORT_ID="mailto:c_188b54f39t68kgvikia14o9faugs8@resource.calendar.google.com"
 TORMACH_ID="mailto:c_18856dus4un86j67m559qpd1he66c@resource.calendar.google.com"
+AUTO_LIFT_ID="mailto:makeitlabs.com_188edv0v5b658jk8h92eemdsdeqom@resource.calendar.google.com"
 
 # Parameters({'CUTYPE': 'RESOURCE', 'ROLE': 'REQ-PARTICIPANT', 'PARTSTAT': 'ACCEPTED', 'CN': 'MiL-1-Center-Laser room - MOPA (2)', 'X-NUM-GUESTS': '0'})
 
@@ -167,7 +168,7 @@ def get_calendar(cal_url,device,rundate=None):
 
             #print ("FUTURE",organizer,calstart, "END",calend)
             for c in component['ATTENDEE']:
-                #print ("ATTENDEE",str(c),c.params)
+                #print ("ATTENDEE",str(c))
                 if (c == MOPA_ID) and (c.params['PARTSTAT'] == 'ACCEPTED'):
                     reserved['MOPA']=True
                 if (c == EPILOG_ID) and (c.params['PARTSTAT'] == 'ACCEPTED'):
@@ -180,6 +181,8 @@ def get_calendar(cal_url,device,rundate=None):
                     reserved['BRIDGEPORT']=True
                 if (c == TORMACH_ID) and (c.params['PARTSTAT'] == 'ACCEPTED'):
                     reserved['TORMACH']=True
+                if (c == AUTO_LIFT_ID) and (c.params['PARTSTAT'] == 'ACCEPTED'):
+                    reserved['AUTO']=True
                 if (c == PROTOTRAK_ID) and (c.params['PARTSTAT'] == 'ACCEPTED'):
                     reserved['PROTOTRAK']=True
 	
@@ -213,22 +216,25 @@ def get_calendar(cal_url,device,rundate=None):
                 device = "ProtoTrak Lathe"
             elif 'BRIDGEPORT' in reserved:
                 device = "Bridgeport"
+            elif 'AUTO' in reserved:
+                device = "Auto"
             elif 'TORMACH' in reserved:
                 device = "Tormach"
 
-            entries.append ({
-                "SUMMARY":summarystr,
-                "START":calstart,
-                "END":calend,
-                "START":shortstart,
-                "END":shortend,
-                "ORGANIZER":organizer,
-                "CODE":code,
-                "DOW":daystr,
-                "DEVICE":device,
-                "TIME":shortstart+"-"+shortend,
-                "WHEN":when
-                    })
+            if len (reserved) > 0:
+                entries.append ({
+                    "SUMMARY":summarystr,
+                    "START":calstart,
+                    "END":calend,
+                    "START":shortstart,
+                    "END":shortend,
+                    "ORGANIZER":organizer,
+                    "CODE":code,
+                    "DOW":daystr,
+                    "DEVICE":device,
+                    "TIME":shortstart+"-"+shortend,
+                    "WHEN":when
+                        })
         #print "CHECK",weekstart,"<",calstart,
         #print "aand",calend,"<",weekend
         #if (weekstart <= calstart) and (calend <= weekend):
