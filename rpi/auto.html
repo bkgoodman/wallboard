@@ -329,30 +329,26 @@
         }
 
         function fetchNotices() {
-            fetch("https://auth.makeitlabs.com/cgi/notices.py?cal=auto")
+            fetch("https://auth.makeitlabs.com/authit/api/v1/resources/auto-lift-users/notices")
               .then(response => response.json())
               .then(data => {
-                  let html = "<div style='display: flex; flex-direction: column; gap: 20px;'>";
-                  let hasItems = false;
-                  if (Array.isArray(data)) {
-                      data.forEach(item => {
-                          html += `<div style='background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px; border-left: 5px solid #ffcc00;'>
-                                      <h3>${item.title || "Notice"}</h3>
-                                      <p>${item.message || item}</p>
-                                   </div>`;
-                          hasItems = true;
-                      });
+                  if (data.length === 0) {
+                      document.getElementById("notices-content").innerHTML = "No notices at this time.";
+                      return;
                   }
-                  html += "</div>";
-
-                  if (!hasItems) {
-                      html = "<p style='text-align: center; margin-top: 50px;'>No new notices.</p>";
+                  let html = "";
+                  for (let key in data) {
+                      let record = data[key];
+                      html += `<div class="notice">
+                          <h3>${record['title'] || '-'}</h3>
+                          <p>${record['message'] || '-'}</p>
+                      </div>`;
                   }
                   document.getElementById("notices-content").innerHTML = html;
               })
               .catch(err => {
-                  console.error("Error fetching notices:", err);
-                  document.getElementById("notices-content").innerHTML = "<p style='text-align: center; margin-top: 50px;'>No new notices.</p>";
+                  console.error("Failed to fetch notices", err);
+                  document.getElementById("notices-content").innerHTML = "Error loading notices.";
               });
         }
     </script>
