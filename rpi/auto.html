@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automotive Display</title>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: "Trebuchet MS", Helvetica, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            background: linear-gradient(-45deg, #ae5732, #a71c5e, #1396b5, #13b59b);
+            background-size: 400% 400%;
+            animation: body-gradient 15s ease infinite;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        @keyframes body-gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .section {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out;
+            width: 80vw;
+            height: 75vh;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 10px 10px 30px rgba(0,0,0,0.7);
+            overflow-y: hidden;
+            box-sizing: border-box;
+            pointer-events: none;
+        }
+
+        .section.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        h1 {
+            font-size: 3.5em;
+            text-align: center;
+            margin-top: 0;
+            border-bottom: 3px solid rgba(255,255,255,0.4);
+            padding-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .content {
+            font-size: 1.8em;
+            width: 100%;
+            height: calc(100% - 100px);
+            overflow-y: auto;
+        }
+
+        /* Adjustments for the tables fetched from the CGI scripts */
+        .content table {
+            width: 100%;
+            font-size: 1.1em;
+            border-collapse: collapse;
+        }
+        .content th {
+            color: #76eeff;
+            border-bottom: 2px solid #54acdd;
+        }
+        .content th, .content td {
+            padding: 15px;
+            text-align: left;
+        }
+        .content tr:nth-child(even) {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .accent-graphic {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            height: 150px;
+            opacity: 0;
+            filter: drop-shadow(5px 5px 10px rgba(0,0,0,0.5));
+            transition: opacity 1.5s ease-in-out;
+            pointer-events: none;
+        }
+        .accent-graphic.active {
+            opacity: 0.8;
+        }
+
+        /* Popup Styles */
+        #post, #alert, #resource_post, #speakbot, #autolift_user {
+            z-index: 115;
+            position: absolute;
+            left: 30px;
+            text-shadow: 1px 1px 2px black, 0 0 25px black, 0 0 55px black, 0 0 5px black;
+            box-shadow: 1px 1px 2px black, 0 0 25px black, 0 0 55px black, 0 0 5px black;
+            padding: 25px;
+            border-radius: 10px;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        #post { top: 20px; background-color: #ff0000d0; }
+        #alert { top: 20px; background-color: #0000ffd0; }
+        #resource_post { bottom: 20px; background-color: #ffffffd0; color: black; text-shadow: none; }
+        #speakbot { 
+            background-color: #00fffff0; 
+            animation: speakbot 6s infinite;
+        }
+        #autolift_user { 
+            bottom: 110px; 
+            background-color: #8f8fffd0; 
+        }
+
+        .showalert {
+            display: block !important;
+            opacity: 1 !important;
+        }
+
+        @keyframes speakbot {
+            0% {background-color:#00fffff0;}
+            50% {background-color:#ff0000f0;}
+            100% {background-color:#00fffff0;}
+        }
+
+        .alert_title {
+            color: white;
+            font-weight: 900;
+            font-size: 86px;
+        }
+        .alert_text {
+            color: yellow;
+            font-weight: 900;
+            font-size: 42px;
+        }
+    </style>
+</head>
+<body onload="initDisplay()">
+
+    <!-- Popups -->
+    <div id="alert"><div id="alert_title" class="alert_title"></div><div id="alert_text" class="alert_text"></div></div>
+    <div id="post"><div id="post_title" class="alert_title"></div><div id="post_text" class="alert_text"></div></div>
+    <div id="resource_post"><div id="resource_text" class="alert_text" style="color: black;"></div></div>
+    <div id="speakbot"><div id="speakbot_text" class="alert_text"></div></div>
+    <div id="autolift_user"><div id="autolift_user_text" class="alert_text"></div></div>
+
+    <!-- Lightbulb / Accent Graphics -->
+    <img id="accent-classes" src="MakeItCog.svg" class="accent-graphic active" alt="Classes Icon" />
+    <img id="accent-reservations" src="MakeItPost.svg" class="accent-graphic" alt="Reservations Icon" />
+    <img id="accent-notices" src="MakeItAlert.svg" class="accent-graphic" alt="Notices Icon" />
+
+    <!-- Section 1: Classes -->
+    <div id="classes" class="section active">
+        <h1>Upcoming Classes</h1>
+        <div id="classes-content" class="content">Loading classes...</div>
+    </div>
+
+    <!-- Section 2: Reservations -->
+    <div id="reservations" class="section">
+        <h1>Reservations</h1>
+        <div id="reservations-content" class="content">Loading reservations...</div>
+    </div>
+
+    <!-- Section 3: Notices -->
+    <div id="notices" class="section">
+        <h1>Notices & Announcements</h1>
+        <div id="notices-content" class="content">Loading notices...</div>
+    </div>
+
+    <script>
+        const sections = ['classes', 'reservations', 'notices'];
+        let currentSectionIndex = 0;
+
+        function initDisplay() {
+            fetchClasses();
+            fetchReservations();
+            fetchNotices();
+
+            // Refresh data periodically in the background
+            setInterval(fetchClasses, 15 * 60 * 1000); // 15 mins
+            setInterval(fetchReservations, 15 * 60 * 1000); // 15 mins
+            setInterval(fetchNotices, 15 * 60 * 1000); // 15 mins
+
+            // Rotate sections every 15 seconds
+            setInterval(cycleSections, 15000);
+
+            // Setup MQTT
+            const mqttClient = mqtt.connect('ws://mqtt:8889/mqtt', {
+                clientId: 'wallboard-auto',
+            });
+
+            mqttClient.on('connect', () => {
+                console.log('Connected to MQTT broker');
+                mqttClient.subscribe('displayboard/read/auto/#');
+                mqttClient.subscribe('displayboard/read/resource/post');
+                mqttClient.subscribe('displayboard/read/status/autolift-primary');
+                mqttClient.subscribe('speakbot');
+            });
+
+            let alertTimer = null;
+
+            mqttClient.on('message', (topic, message) => {
+                let j = {};
+                try {
+                    if (message.toString() !== "") {
+                        j = JSON.parse(message.toString());
+                    }
+                } catch (e) { }
+
+                if (topic === "displayboard/read/auto/alert") {
+                    const el = document.getElementById("alert");
+                    document.getElementById('alert_title').innerHTML = j['Title'] || "";
+                    document.getElementById('alert_text').innerHTML = j['Message'] || "";
+                    el.classList.add("showalert");
+                    if (alertTimer) clearTimeout(alertTimer);
+                    alertTimer = setTimeout(() => {
+                        el.classList.remove("showalert");
+                        alertTimer = null;
+                    }, (j["Timeout"] || 10) * 1000);
+                } 
+                else if (topic === "displayboard/read/auto/post") {
+                    const el = document.getElementById("post");
+                    if (!j['Title'] && !j['Message']) {
+                        el.classList.remove("showalert");
+                    } else {
+                        document.getElementById('post_title').innerHTML = j['Title'] || "";
+                        document.getElementById('post_text').innerHTML = j['Message'] || "";
+                        el.classList.add("showalert");
+                    }
+                } 
+                else if (topic === "displayboard/read/status/autolift-primary") {
+                    const el = document.getElementById("autolift_user");
+                    if (j['text']) {
+                        el.classList.add("showalert");
+                        document.getElementById('autolift_user_text').innerHTML = "Auto Lift: " + j['text'];
+                    } else {
+                        el.classList.remove("showalert");
+                    }
+                } 
+                else if (topic === "speakbot") {
+                    const el = document.getElementById("speakbot");
+                    if (j['text'] && j['command'] !== "/clear") {
+                        el.classList.add("showalert");
+                        document.getElementById('speakbot_text').innerHTML = j['text'];
+                        setTimeout(() => el.classList.remove("showalert"), 10 * 60 * 1000);
+                    }
+                } 
+                else if (topic === "displayboard/read/resource/post") {
+                    const el = document.getElementById("resource_post");
+                    el.classList.add("showalert");
+                    document.getElementById('resource_text').innerHTML = j['Message'] || "";
+                    setTimeout(() => el.classList.remove("showalert"), 5000);
+                }
+            });
+            // Close window on keypress or click
+            document.addEventListener('keydown', () => window.close());
+            document.addEventListener('click', () => window.close());
+        }
+
+        function cycleSections() {
+            const currentSection = document.getElementById(sections[currentSectionIndex]);
+            currentSection.classList.remove('active');
+            
+            const currentIcon = document.getElementById('accent-' + sections[currentSectionIndex]);
+            currentIcon.classList.remove('active');
+
+            setTimeout(() => {
+                currentSectionIndex = (currentSectionIndex + 1) % sections.length;
+                const nextSection = document.getElementById(sections[currentSectionIndex]);
+                nextSection.classList.add('active');
+
+                const nextIcon = document.getElementById('accent-' + sections[currentSectionIndex]);
+                nextIcon.classList.add('active');
+            }, 1500); // Wait for fade out to complete before fading in the next one
+        }
+
+        function fetchClasses() {
+            fetch("https://auth.makeitlabs.com/cgi/evtbrite.py?cal=auto")
+              .then(response => response.text())
+              .then(data => {
+                  document.getElementById("classes-content").innerHTML = data || "No upcoming classes.";
+              })
+              .catch(err => console.error("Error fetching classes:", err));
+        }
+
+        function fetchReservations() {
+            fetch("https://auth.makeitlabs.com/cgi/gencal.py?cal=auto")
+              .then(response => response.json())
+              .then(data => {
+                  let html = "<table>";
+                  html += "<tr><th>Person</th><th>Summary</th><th>When</th></tr>";
+                  
+                  let hasItems = false;
+                  for (let key in data) {
+                      let record = data[key];
+                      html += `<tr>
+                          <td>${record['ORGANIZER'] || '-'}</td>
+                          <td>${record['SUMMARY'] || '-'}</td>
+                          <td>${record['DOW'] || ''} ${record['TIME'] || ''}</td>
+                      </tr>`;
+                      hasItems = true;
+                  }
+                  html += "</table>";
+                  
+                  if (!hasItems) {
+                      html = "<p style='text-align: center; margin-top: 50px;'>No upcoming reservations.</p>";
+                  }
+                  document.getElementById("reservations-content").innerHTML = html;
+              })
+              .catch(err => {
+                  console.error("Error fetching reservations:", err);
+                  document.getElementById("reservations-content").innerHTML = "<p style='text-align: center; margin-top: 50px;'>No upcoming reservations.</p>";
+              });
+        }
+
+        function fetchNotices() {
+            fetch("https://auth.makeitlabs.com/authit/api/v1/resources/auto-lift-users/notices")
+              .then(response => response.json())
+              .then(data => {
+                  if (data.length === 0) {
+                      document.getElementById("notices-content").innerHTML = "No notices at this time.";
+                      return;
+                  }
+                  let html = "";
+                  for (let key in data) {
+                      let record = data[key];
+                      html += `<div class="notice">
+                          <h3>${record['title'] || '-'}</h3>
+                          <p>${record['message'] || '-'}</p>
+                      </div>`;
+                  }
+                  document.getElementById("notices-content").innerHTML = html;
+              })
+              .catch(err => {
+                  console.error("Failed to fetch notices", err);
+                  document.getElementById("notices-content").innerHTML = "Error loading notices.";
+              });
+        }
+    </script>
+</body>
+</html>

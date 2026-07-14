@@ -109,6 +109,7 @@ gameTimer = null;
 		  mqttClient.subscribe('displayboard/read/resource/post');
 		  mqttClient.subscribe('displayboard/read/status/tormach-1100');
 		  mqttClient.subscribe('displayboard/read/status/lathe-prototrak');
+		  mqttClient.subscribe('displayboard/read/status/tool-laser-kern');
 		  mqttClient.subscribe('displayboard/read/status/mill-prototrak');
 		  mqttClient.subscribe('speakbot');
 		  console.log('Connect Done');
@@ -161,9 +162,19 @@ gameTimer = null;
 				x.classList.remove("hidealert");
 				x.classList.add("showalert");
 			}
+		} else if (topic == "displayboard/read/status/tool-laser-kern")  {
+			var x = document.getElementById("kern_user");
+			if ((j['text'] != null ) || (j['text'] == "")) {
+				x.classList.remove("hidealert");
+				x.classList.add("showalert");
+				document.getElementById('kern_user_text').innerHTML="Kern: "+j['text'];
+			} else {
+				x.classList.add("hidealert");
+				x.classList.remove("showalert");
+			}
 		} else if (topic == "displayboard/read/status/mill-prototrak")  {
 			var x = document.getElementById("mill_prototrak_user");
-			if (j['text'] != null ) {
+			if ((j['text'] != null ) || (j['text'] == "")) {
 				x.classList.remove("hidealert");
 				x.classList.add("showalert");
 				document.getElementById('mill_prototrak_user_text').innerHTML="Bridgeport: "+j['text'];
@@ -173,7 +184,7 @@ gameTimer = null;
 			}
 		} else if (topic == "displayboard/read/status/lathe-prototrak")  {
 			var x = document.getElementById("lathe_prototrak_user");
-			if (j['text'] != null ) {
+			if ((j['text'] != null ) || (j['text'] == "")) {
 				x.classList.remove("hidealert");
 				x.classList.add("showalert");
 				document.getElementById('lathe_prototrak_user_text').innerHTML="Lathe: "+j['text'];
@@ -520,6 +531,23 @@ left:30px;
   padding:10;
   border-radius:10px;
   background-color:#8f8fffD0
+}
+#kern_user {
+z-index:105;
+position:absolute;
+bottom:400;
+left:30px;
+  text-shadow: 1px 1px 2px black, 
+  		0 0 25px black, 
+  		0 0 55px black, 
+		0 0 5px black;
+  box-shadow: 1px 1px 2px black, 
+  		0 0 25px black, 
+  		0 0 55px black, 
+		0 0 5px black;
+  padding:10;
+  border-radius:10px;
+  background-color:#f2ff8fd0
 }
 #mill_prototrak_user {
 z-index:105;
@@ -885,6 +913,10 @@ z"
 	<tspan id="post_title" class="alert_title">Test</tspan>
 	<hr />
 	<tspan id="post_text" class="alert_text">Test</tspan>
+</div>
+<div id="kern_user" class="hidealert">
+	<img height="40px" style="vertical-align:bottom" src="MakeItCog.svg" />
+	<tspan id="kern_user_text" style="font-size:30px" class="alert_title">Test</tspan>
 </div>
 <div id="mill_prototrak_user" class="hidealert">
 	<img height="40px" style="vertical-align:bottom" src="MakeItCog.svg" />

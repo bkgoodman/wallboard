@@ -109,6 +109,7 @@ gameTimer = null;
 		  mqttClient.subscribe('displayboard/read/laser/#');
 		  mqttClient.subscribe('displayboard/read/resource/post');
 		  mqttClient.subscribe('displayboard/read/status/laser-epilog');
+		  mqttClient.subscribe('displayboard/read/status/tool-xtool-uv');
 		  mqttClient.subscribe('displayboard/read/status/laser-mopa');
 		  console.log('Connect Done');
 		});
@@ -160,9 +161,19 @@ gameTimer = null;
 				x.classList.remove("hidealert");
 				x.classList.add("showalert");
 			}
+		} else if (topic == "displayboard/read/status/tool-xtool-uv")  {
+			var x = document.getElementById("xtool_user");
+			if ((j['text'] != null ) || (j['text'] == "")) {
+				x.classList.remove("hidealert");
+				x.classList.add("showalert");
+				document.getElementById('xtool_user_text').innerHTML="xTool: "+j['text'];
+			} else {
+				x.classList.add("hidealert");
+				x.classList.remove("showalert");
+			}
 		} else if (topic == "displayboard/read/status/laser-mopa")  {
 			var x = document.getElementById("mopa_user");
-			if (j['text'] != null ) {
+			if ((j['text'] != null ) || (j['text'] == "")) {
 				x.classList.remove("hidealert");
 				x.classList.add("showalert");
 				document.getElementById('mopa_user_text').innerHTML="MOPA: "+j['text'];
@@ -527,6 +538,23 @@ left:30px;
   border-radius:10px;
   background-color:#8fff8fD0
 }
+#xtool_user {
+z-index:105;
+position:absolute;
+bottom:290;
+left:30px;
+  text-shadow: 1px 1px 2px black, 
+  		0 0 25px black, 
+  		0 0 55px black, 
+		0 0 5px black;
+  box-shadow: 1px 1px 2px black, 
+  		0 0 25px black, 
+  		0 0 55px black, 
+		0 0 5px black;
+  padding:10;
+  border-radius:10px;
+  background-color:#f2ff8fd0
+}
 #resource_post {
 z-index:105;
 position:absolute;
@@ -860,6 +888,10 @@ z"
 <div id="mopa_user" class="hidealert">
 	<img height="40px" style="vertical-align:bottom" src="MakeItCog.svg" />
 	<tspan id="mopa_user_text" style="font-size:30px" class="alert_title">Test</tspan>
+</div>
+<div id="xtool_user" class="hidealert">
+	<img height="40px" style="vertical-align:bottom" src="MakeItCog.svg" />
+	<tspan id="xtool_user_text" style="font-size:30px" class="alert_title">Test</tspan>
 </div>
 <div id="epilog_user" class="hidealert">
 	<img height="40px" style="vertical-align:bottom" src="MakeItCog.svg" />
