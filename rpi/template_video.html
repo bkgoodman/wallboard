@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Display</title>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: black;
+            font-family: "Trebuchet MS", Helvetica, sans-serif;
+        }
+
+        #myvideo {
+            z-index: 0;
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+        }
+
+        /* Generic Resource Status Popup Container */
+        #resource_status_container {
+            position: absolute;
+            bottom: 20px;
+            left: 30px;
+            display: flex;
+            flex-direction: column-reverse;
+            gap: 15px;
+            z-index: 110;
+        }
+
+        .resource_status_popup {
+            text-shadow: 1px 1px 2px black, 0 0 25px black, 0 0 55px black, 0 0 5px black;
+            box-shadow: 1px 1px 2px black, 0 0 25px black, 0 0 55px black, 0 0 5px black;
+            padding: 10px 25px;
+            border-radius: 10px;
+            background-color: #8f8fffd0;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        /* Popup Styles */
+        #post,
+        #alert,
+        #resource_post,
+        #speakbot {
+            z-index: 115;
+            position: absolute;
+            left: 30px;
+            text-shadow: 1px 1px 2px black, 0 0 25px black, 0 0 55px black, 0 0 5px black;
+            box-shadow: 1px 1px 2px black, 0 0 25px black, 0 0 55px black, 0 0 5px black;
+            padding: 25px;
+            border-radius: 10px;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        #post {
+            top: 20px;
+            background-color: #ff0000d0;
+        }
+
+        #alert {
+            top: 20px;
+            background-color: #0000ffd0;
+        }
+
+        #resource_post {
+            bottom: 20px;
+            background-color: #ffffffd0;
+            color: black;
+            text-shadow: none;
+            left: auto;
+            right: 30px;
+        }
+
+        #speakbot {
+            background-color: #00fffff0;
+            animation: speakbot 6s infinite;
+        }
+
+        .alert_title {
+            color: white;
+            font-weight: 900;
+            font-size: 86px;
+        }
+
+        .alert_text {
+            color: yellow;
+            font-weight: 900;
+            font-size: 42px;
+        }
+
+        .showalert {
+            display: block !important;
+            opacity: 1 !important;
+            animation-name: showalert;
+            animation-duration: 1.5s;
+            animation-iteration-count: 1;
+        }
+
+        .hidealert {
+            opacity: 0 !important;
+            pointer-events: none;
+            animation-name: hidealert;
+            animation-duration: 1.5s;
+            animation-iteration-count: 1;
+        }
+
+        @keyframes showalert {
+            0% {
+                opacity: 0;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        @keyframes hidealert {
+            0% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0;
+            }
+        }
+
+        @keyframes speakbot {
+            0% {
+                background-color: #00fffff0;
+            }
+
+            50% {
+                background-color: #ff0000f0;
+            }
+
+            100% {
+                background-color: #00fffff0;
+            }
+        }
+
+        #class_list,
+        #notices_list {
+            z-index: 106;
+            position: absolute;
+            transform: scale(1.5);
+            top: 15vh;
+            left: 10vw;
+            box-shadow: 1px 1px 2px black, 0 0 25px black, 0 0 55px black, 0 0 5px black;
+            padding: 15px;
+            border-radius: 10px;
+            background-color: #ffffffD0;
+            max-width: 40vw;
+            color: black;
+            opacity: 0;
+            /* Hidden by default */
+        }
+
+        #class_list table {
+            font-size: 0.8em;
+        }
+
+        #class_list>table>tbody>tr>td:nth-child(2) {
+            padding-right: 20px;
+        }
+
+        #class_list>table>tbody>tr>th {
+            color: blue;
+            text-align: left;
+        }
+
+        #class_list>table>tbody>tr>td:nth-child(1) {
+            padding-right: 20px;
+        }
+
+        @keyframes chit {
+            0% {
+                opacity: 0;
+                left: 150vw;
+            }
+
+            10% {
+                opacity: 1;
+                left: 15vw;
+            }
+
+            90% {
+                opacity: 1;
+                left: 15vw;
+            }
+
+            100% {
+                opacity: 0;
+                left: 150vw;
+            }
+        }
+
+        .chit {
+            opacity: 0;
+            animation-name: chit;
+            animation-duration: 15s;
+            animation-iteration-count: 1;
+            width: 100%;
+            position: fixed;
+            left: 150vw;
+            z-index: 99;
+        }
+    </style>
+</head>
+
+<body id="body" onload="initDisplay()">
+
+    <!-- Background Video -->
+    <video id="myvideo" autoplay loop preload playsinline muted>
+        <!-- Source is set dynamically in initDisplay() -->
+    </video>
+
+    <!-- Popups -->
+    <div id="alert">
+        <div id="alert_title" class="alert_title"></div>
+        <div id="alert_text" class="alert_text"></div>
+    </div>
+    <div id="post">
+        <div id="post_title" class="alert_title"></div>
+        <div id="post_text" class="alert_text"></div>
+    </div>
+    <div id="resource_post">
+        <div id="resource_text" class="alert_text" style="color: black;"></div>
+    </div>
+    <div id="speakbot">
+        <div id="speakbot_text" class="alert_text"></div>
+    </div>
+
+    <!-- Dynamic Resource Status Container -->
+    <div id="resource_status_container"></div>
+
+    <!-- Data Overlays -->
+    <div id="class_list" class="hidealert" style="font-family:system-ui"></div>
+    <div id="notices_list" class="hidealert" style="font-family:system-ui"></div>
+
+    <!-- Chit Template (Hidden, cloned by JS) -->
+    <div id="chit_template" style="opacity: 0; position: fixed; left: 150vw; pointer-events: none;">
+        <svg width="70%" viewBox="0 0 255 33.382" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="linearGradient7722" x1="45.75" x2="45.75" y1="82.252" y2="106.83"
+                    gradientTransform="translate(-26.652 -76.367)" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#0000ff" offset="0" />
+                    <stop stop-color="#0000ff" stop-opacity="0" offset="1" />
+                </linearGradient>
+                <linearGradient id="linearGradient7817" x1="55.97" x2="55.727" y1="99.773" y2="107.8"
+                    gradientTransform="translate(-26.652 -76.367)" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#000030" offset="0" />
+                    <stop stop-color="#000070" offset="1" />
+                </linearGradient>
+            </defs>
+            <g fill-rule="evenodd" stroke-linecap="round" stroke-linejoin="round">
+                <g stroke-width="2.2">
+                    <path
+                        d="M 7.89,0.35 c -4.1,0 -7.53,3.03 -7.53,6.88 v 17.43 c 0,3.85 3.43,6.88 7.53,6.88 h 236.63 c 4.1,0 8.1,-3.03 8.1,-6.88 v -17.43 c 0,-3.85 -4,-6.88 -8.1,-6.88 z"
+                        fill-opacity=".998" />
+                    <rect x="1.33" y="1.32" width="250" height="29.25" rx="6.56" ry="5.91" fill="#fff"
+                        fill-opacity=".998" />
+                    <path
+                        d="M 6.99,1.32 c -3.13,0 -5.66,2.64 -5.66,5.91 v 17.43 c 0,3.27 2.53,5.91 5.66,5.91 h 63.43 V 1.32 Z"
+                        fill="url(#linearGradient7722)" />
+                </g>
+                <g fill-opacity=".998" font-family="sans-serif">
+                    <text x="31.39" y="10.5" fill="#ffffff" font-size="8.18px" font-weight="bold">
+                        <tspan id="dow" text-anchor="middle" x="39" y="10.5">MON</tspan>
+                    </text>
+                    <text x="28.22" y="18.31" fill="#ffffff" font-size="7px">
+                        <tspan id="time" text-anchor="middle" x="39" y="18.31">12:00 - 1PM</tspan>
+                    </text>
+                    <text>
+                        <tspan id="title" x="73" y="12" fill="#000000" font-size="12px" font-weight="bold">Event</tspan>
+                    </text>
+                    <text>
+                        <tspan id="person" x="245" y="28" fill="#555" text-anchor="end" font-size="12px">Name</tspan>
+                    </text>
+                </g>
+                <path d="M 1.33,21.46 v 3.2 c 0,3.27 2.52,5.91 5.66,5.91 h 63.43 v -9.11 z"
+                    fill="url(#linearGradient7817)" />
+                <text x="47" y="27" fill="#ffffff" font-family="sans-serif" font-size="6.5px" font-weight="bold">
+                    <tspan id="resource" text-anchor="end" x="65" y="27.76">Resource</tspan>
+                </text>
+            </g>
+        </svg>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        let chitData = {};
+        let isFirstLoad = true;
+
+        function initDisplay() {
+            document.title = CONFIG.title;
+
+            // Setup Video Background
+            if (CONFIG.backgroundVideo) {
+                let videoEl = document.getElementById("myvideo");
+                let sourceEl = document.createElement("source");
+                sourceEl.src = CONFIG.backgroundVideo;
+                videoEl.appendChild(sourceEl);
+            }
+
+            // Fetch initial data
+            getNewData();
+            getClassData();
+            if (CONFIG.noticesUrl) fetchNotices();
+
+            // Setup intervals
+            setInterval(getNewData, 15 * 60 * 1000); // 15 mins
+            setInterval(getClassData, 24 * 60 * 60 * 1000); // 24 hours
+            setInterval(updateChit, 60 * 1000); // Every minute, trigger chit animation cycle
+            if (CONFIG.noticesUrl) setInterval(fetchNotices, 15 * 60 * 1000); // 15 mins
+
+            // Setup MQTT
+            const mqttClient = mqtt.connect('ws://mqtt:8889/mqtt', {
+                clientId: CONFIG.mqtt.clientId,
+            });
+
+            mqttClient.on('connect', () => {
+                console.log('Connected to MQTT broker');
+                mqttClient.subscribe('displayboard/read/' + CONFIG.mqtt.topicBase + '/#');
+                mqttClient.subscribe('displayboard/read/resource/post');
+                mqttClient.subscribe('speakbot');
+
+                if (CONFIG.mqtt.resources) {
+                    for (const topic in CONFIG.mqtt.resources) {
+                        mqttClient.subscribe(topic);
+                    }
+                }
+            });
+
+            let alertTimer = null;
+
+            mqttClient.on('message', (topic, message) => {
+                let j = {};
+                try {
+                    if (message.toString() !== "") j = JSON.parse(message.toString());
+                } catch (e) { }
+
+                if (topic === "displayboard/read/" + CONFIG.mqtt.topicBase + "/alert") {
+                    const el = document.getElementById("alert");
+                    document.getElementById('alert_title').innerHTML = j['Title'] || "";
+                    document.getElementById('alert_text').innerHTML = j['Message'] || "";
+                    el.classList.add("showalert");
+                    el.classList.remove("hidealert");
+                    if (alertTimer) clearTimeout(alertTimer);
+                    alertTimer = setTimeout(() => {
+                        el.classList.remove("showalert");
+                        el.classList.add("hidealert");
+                        alertTimer = null;
+                    }, (j["Timeout"] || 10) * 1000);
+                }
+                else if (topic === "displayboard/read/" + CONFIG.mqtt.topicBase + "/post") {
+                    const el = document.getElementById("post");
+                    if (!j['Title'] && !j['Message']) {
+                        el.classList.remove("showalert");
+                        el.classList.add("hidealert");
+                    } else {
+                        document.getElementById('post_title').innerHTML = j['Title'] || "";
+                        document.getElementById('post_text').innerHTML = j['Message'] || "";
+                        el.classList.remove("hidealert");
+                        el.classList.add("showalert");
+                    }
+                }
+                else if (CONFIG.mqtt.resources && CONFIG.mqtt.resources[topic]) {
+                    let container = document.getElementById("resource_status_container");
+                    let popupId = "res_" + topic.replace(/[^a-zA-Z0-9]/g, '_');
+                    let el = document.getElementById(popupId);
+
+                    let resConfig = CONFIG.mqtt.resources[topic];
+                    let label = typeof resConfig === 'string' ? resConfig : resConfig.label;
+                    let bgColor = typeof resConfig === 'string' ? null : resConfig.bgColor;
+
+                    if (!el) {
+                        el = document.createElement("div");
+                        el.id = popupId;
+                        el.className = "resource_status_popup";
+                        if (bgColor) el.style.backgroundColor = bgColor;
+
+                        let textEl = document.createElement("div");
+                        textEl.className = "alert_title";
+                        textEl.style.fontSize = "30px";
+                        el.appendChild(textEl);
+
+                        container.appendChild(el);
+                    }
+
+                    if (j['text']) {
+                        el.classList.remove("hidealert");
+                        el.classList.add("showalert");
+                        el.firstChild.innerHTML = label + " " + j['text'];
+                    } else {
+                        el.classList.remove("showalert");
+                        el.classList.add("hidealert");
+                    }
+                }
+                else if (topic === "speakbot") {
+                    const el = document.getElementById("speakbot");
+                    if (j['text'] && j['command'] !== "/clear") {
+                        el.classList.remove("hidealert");
+                        el.classList.add("showalert");
+                        document.getElementById('speakbot_text').innerHTML = j['text'];
+                        setTimeout(() => {
+                            el.classList.remove("showalert");
+                            el.classList.add("hidealert");
+                        }, 10 * 60 * 1000);
+                    }
+                }
+                else if (topic === "displayboard/read/resource/post") {
+                    const el = document.getElementById("resource_post");
+                    el.classList.remove("hidealert");
+                    el.classList.add("showalert");
+                    document.getElementById('resource_text').innerHTML = j['Message'] || "";
+                    setTimeout(() => {
+                        el.classList.remove("showalert");
+                        el.classList.add("hidealert");
+                    }, 5000);
+                }
+            });
+
+            // Allow manual close for testing
+            document.addEventListener('keydown', () => window.close());
+            document.addEventListener('click', () => window.close());
+        }
+
+        // ============================================================================
+        // DATA FETCHING & ANIMATION TIMING
+        // ============================================================================
+
+        function getClassData() {
+            fetch("https://auth.makeitlabs.com/cgi/evtbrite.py?cal=" + CONFIG.calendarName)
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById("class_list").innerHTML = data;
+                })
+                .catch(err => console.error("Error fetching classes", err));
+        }
+
+        function getNewData() {
+            fetch("https://auth.makeitlabs.com/cgi/gencal.py?cal=" + CONFIG.calendarName)
+                .then(response => response.json())
+                .then(data => { 
+                    chitData = data; 
+                    if (isFirstLoad) {
+                        updateChit();
+                        isFirstLoad = false;
+                    }
+                })
+                .catch(err => console.error("Error fetching calendar", err));
+        }
+
+        function fetchNotices() {
+            if (!CONFIG.noticesUrl) return;
+            fetch(CONFIG.noticesUrl)
+                .then(response => response.json())
+                .then(data => {
+                    let el = document.getElementById("notices_list");
+                    if (!data || data.length === 0) {
+                        el.innerHTML = "";
+                        return;
+                    }
+                    let html = "<h2 style='margin:2px;text-align:center;color:#888'>Notices</h2>";
+                    html += "<ul style='padding-left:20px; font-size:1.1em;'>";
+                    for (let key in data) {
+                        html += `<li style='margin-bottom:8px;'><strong>${data[key]['title'] || '-'}</strong>: ${data[key]['message'] || '-'}</li>`;
+                    }
+                    html += "</ul>";
+                    el.innerHTML = html;
+                })
+                .catch(err => console.error("Failed to fetch notices", err));
+        }
+
+        function updateChit() {
+            // 1. Launch the chits
+            let delay = 0;
+            let index = 0;
+            for (let c in chitData) {
+                setTimeout(startChit, delay, index, chitData[c]);
+                delay += 250;
+                index++;
+            }
+
+            // 2. Show class list from 30s to 40s
+            setTimeout(() => {
+                let cl = document.getElementById("class_list");
+                if (cl.innerHTML.trim() !== "") {
+                    cl.classList.remove("hidealert");
+                    cl.classList.add("showalert");
+                }
+            }, 30000);
+            setTimeout(() => {
+                let cl = document.getElementById("class_list");
+                if (cl.innerHTML.trim() !== "") {
+                    cl.classList.add("hidealert");
+                    cl.classList.remove("showalert");
+                }
+            }, 40000);
+
+            // 3. Show notices list from 42s to 52s
+            setTimeout(() => {
+                let nl = document.getElementById("notices_list");
+                if (nl && nl.innerHTML.trim() !== "") {
+                    nl.classList.remove("hidealert");
+                    nl.classList.add("showalert");
+                }
+            }, 42000);
+            setTimeout(() => {
+                let nl = document.getElementById("notices_list");
+                if (nl && nl.innerHTML.trim() !== "") {
+                    nl.classList.add("hidealert");
+                    nl.classList.remove("showalert");
+                }
+            }, 52000);
+        }
+
+        function startChit(num, record) {
+            let existing = document.getElementById("chit" + num);
+            if (existing) existing.remove();
+
+            let template = document.getElementById("chit_template").children[0];
+            let chit = template.cloneNode(true);
+
+            let wrapper = document.createElement("div");
+            wrapper.id = "chit" + num;
+            wrapper.className = "chit";
+            wrapper.appendChild(chit);
+
+            wrapper.querySelector('#person').innerHTML = record['ORGANIZER'] || '';
+            wrapper.querySelector('#title').innerHTML = record['SUMMARY'] || '';
+            wrapper.querySelector('#resource').innerHTML = record['DEVICE'] || record['RESOURCE'] || 'Resource';
+            wrapper.querySelector('#dow').innerHTML = record['DOW'] || '';
+            wrapper.querySelector('#time').innerHTML = record['TIME'] || '';
+
+            // Stagger vertically
+            let v = (15 * num) + 30;
+            wrapper.style.top = v + "vh";
+
+            document.body.appendChild(wrapper);
+
+            // Clean up the DOM after animation completes (15 seconds)
+            setTimeout(() => {
+                if (document.body.contains(wrapper)) {
+                    wrapper.remove();
+                }
+            }, 16000);
+        }
+    </script>
+</body>
+
+</html>
