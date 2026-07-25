@@ -15,6 +15,9 @@ const CONFIG = {
     // Calendar query parameter (e.g. "auto", "metalshop", "laser", "textiles")
     calendarName: "auto",
 
+    // Allow clicking or pressing a key to exit the page (useful for interactive kiosks)
+    kioskExitOnClick: true,
+
     // URL for fetching notices (set to null if no notices exist for this display)
     // noticesUrl: "https://auth.makeitlabs.com/authit/api/v1/resources/auto-lift-users/notices",
     noticesUrl: null, 

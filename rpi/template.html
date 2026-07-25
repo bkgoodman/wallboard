@@ -396,9 +396,11 @@ TH V
                     setTimeout(() => el.classList.remove("showalert"), 5000);
                 }
             });
-            // Close window on keypress or click
-            document.addEventListener('keydown', () => window.close());
-            document.addEventListener('click', () => window.close());
+            // Close window on keypress or click (if enabled)
+            if (CONFIG.kioskExitOnClick !== false) {
+                document.addEventListener('keydown', () => window.close());
+                document.addEventListener('click', () => window.close());
+            }
         }
 
         function cycleSections() {
