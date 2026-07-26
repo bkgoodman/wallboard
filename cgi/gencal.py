@@ -20,6 +20,7 @@ BRIDGEPORT_URL="https://calendar.google.com/calendar/ical/c_188b54f39t68kgvikia1
 JETLATHE_URL="https://calendar.google.com/calendar/ical/c_18810t9nfo22qhp9h4fm2ngv5flt0%40resource.calendar.google.com/private-88b3bf13ab8611387380732b363d0a34/basic.ics"
 PROTOTRAK_URL="https://calendar.google.com/calendar/ical/c_1889s1vmc5pomj84ltqr9eibcfa2k%40resource.calendar.google.com/private-f9b1a88020c187b538f724e886528754/basic.ics"
 TORMACH_URL="https://calendar.google.com/calendar/ical/c_18856dus4un86j67m559qpd1he66c%40resource.calendar.google.com/private-9bc712c591cd5a37c1559419c2ad7b24/basic.ics"
+PUBLIC_URL="https://calendar.google.com/calendar/ical/makeitlabs.com_mpfejifn6j4f5klmu1oubknb34%40group.calendar.google.com/public/basic.ics"
 
 
 EPILOG_ID="mailto:makeitlabs.com_3133373236393938363631@resource.calendar.google.com"
@@ -142,7 +143,7 @@ def get_calendar(cal_url,device,rundate=None):
             daystr = calstart.strftime("%a")
             if (yday >= nowday+7):
                 daystr = "Next "+daystr
-
+        
         when = daystr+" "+shortstart+" - "+shortend
      
         organizer=""
@@ -167,7 +168,10 @@ def get_calendar(cal_url,device,rundate=None):
         if ((calstart  >= now) or (calend >= now))  and ( calstart <= cutoff ) :
 
             #print ("FUTURE",organizer,calstart, "END",calend)
-            for c in component['ATTENDEE']:
+            #for c in component['ATTENDEE']:
+            attendees = component['ATTENDEE']
+            if attendees:
+              for c in (attendees if isinstance(attendees, list) else [attendees]):
                 #print ("ATTENDEE",str(c))
                 if (c == MOPA_ID) and (c.params['PARTSTAT'] == 'ACCEPTED'):
                     reserved['MOPA']=True
