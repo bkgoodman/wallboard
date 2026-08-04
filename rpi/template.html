@@ -407,18 +407,27 @@ TH V
             if (sections.length <= 1) return; // Nothing to cycle
 
             const currentSection = document.getElementById(sections[currentSectionIndex]);
-            currentSection.classList.remove('active');
+            if (currentSection) currentSection.classList.remove('active');
 
             const currentIcon = document.getElementById('accent-' + sections[currentSectionIndex]);
-            currentIcon.classList.remove('active');
+            if (currentIcon) currentIcon.classList.remove('active');
 
             setTimeout(() => {
-                currentSectionIndex = (currentSectionIndex + 1) % sections.length;
+                let loopCount = 0;
+                do {
+                    currentSectionIndex = (currentSectionIndex + 1) % sections.length;
+                    loopCount++;
+                } while (
+                    document.getElementById(sections[currentSectionIndex]) && 
+                    document.getElementById(sections[currentSectionIndex]).getAttribute('data-skip') === 'true' &&
+                    loopCount < sections.length
+                );
+
                 const nextSection = document.getElementById(sections[currentSectionIndex]);
-                nextSection.classList.add('active');
+                if (nextSection) nextSection.classList.add('active');
 
                 const nextIcon = document.getElementById('accent-' + sections[currentSectionIndex]);
-                nextIcon.classList.add('active');
+                if (nextIcon) nextIcon.classList.add('active');
             }, 1500); // Wait for fade out to complete before fading in the next one
         }
 
@@ -466,10 +475,13 @@ TH V
             fetch(CONFIG.noticesUrl)
                 .then(response => response.json())
                 .then(data => {
+                    const noticesSection = document.getElementById("notices");
                     if (!data || data.length === 0) {
                         document.getElementById("notices-content").innerHTML = "No notices at this time.";
+                        if (noticesSection) noticesSection.setAttribute('data-skip', 'true');
                         return;
                     }
+                    if (noticesSection) noticesSection.removeAttribute('data-skip');
                     let html = "";
                     for (let key in data) {
                         let record = data[key];
@@ -483,6 +495,8 @@ TH V
                 .catch(err => {
                     console.error("Failed to fetch notices", err);
                     document.getElementById("notices-content").innerHTML = "Error loading notices.";
+                    const noticesSection = document.getElementById("notices");
+                    if (noticesSection) noticesSection.setAttribute('data-skip', 'true');
                 });
         }
     </script>
