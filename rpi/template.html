@@ -6,6 +6,13 @@ TH V
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Display</title>
+
+    <!-- ========================================================= -->
+    <!-- EDIT THIS LINE TO POINT TO YOUR ACTUAL CONFIG FILE        -->
+    <!-- (e.g. src="config.auto.js" or src="config.js")            -->
+    <!-- ========================================================= -->
+    <script src="config.js"></script>
+
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <style>
         body {
@@ -239,7 +246,6 @@ TH V
 
     <!-- Section 1: Classes -->
     <div id="classes" class="section active">
-        <h1>Upcoming Classes</h1>
         <div id="classes-content" class="content">Loading classes...</div>
     </div>
 
@@ -255,7 +261,6 @@ TH V
         <div id="notices-content" class="content">Loading notices...</div>
     </div>
 
-    <script src="config.js"></script>
     <script>
         let sections = ['classes', 'reservations'];
         let currentSectionIndex = 0;
@@ -418,7 +423,7 @@ TH V
                     currentSectionIndex = (currentSectionIndex + 1) % sections.length;
                     loopCount++;
                 } while (
-                    document.getElementById(sections[currentSectionIndex]) && 
+                    document.getElementById(sections[currentSectionIndex]) &&
                     document.getElementById(sections[currentSectionIndex]).getAttribute('data-skip') === 'true' &&
                     loopCount < sections.length
                 );
