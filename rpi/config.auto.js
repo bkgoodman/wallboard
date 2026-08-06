@@ -10,7 +10,7 @@ const CONFIG = {
     // Set backgroundVideo to a URL (e.g. "LaserRoom.mp4") to use a video background.
     // If null, it falls back to backgroundColors (for the standard template).
     backgroundVideo: null,
-    backgroundColors: ["#111111", "#333333", "#555555", "#777777"],
+    backgroundColors: ["#f14b4b", "#655afa", "#58e964", "#edfd5d"],
 
     // Calendar query parameter (e.g. "auto", "metalshop", "laser", "textiles")
     calendarName: "auto",

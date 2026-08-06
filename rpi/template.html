@@ -1,4 +1,3 @@
-TH V
 <!DOCTYPE html>
 <html lang="en">
 
@@ -21,7 +20,7 @@ TH V
             height: 100vh;
             overflow: hidden;
             /* Default background, overridden by CONFIG if set */
-            background: linear-gradient(-45deg, #333333, #555555, #111111, #444444);
+            background: linear-gradient(-45deg, #f14b4b, #655afa, #58e964, #edfd5d);
             background-size: 400% 400%;
             animation: body-gradient 15s ease infinite;
             color: white;
@@ -85,6 +84,15 @@ TH V
             width: 100%;
             height: calc(100% - 100px);
             overflow-y: auto;
+            -ms-overflow-style: none;
+            /* IE and Edge */
+            scrollbar-width: none;
+            /* Firefox */
+        }
+
+        .content::-webkit-scrollbar {
+            display: none;
+            /* Chrome, Safari and Opera */
         }
 
         /* Adjustments for the tables fetched from the CGI scripts */
@@ -306,6 +314,12 @@ TH V
             // Rotate sections every 15 seconds
             setInterval(cycleSections, 15000);
 
+            // Start scrolling the initial section
+            setTimeout(() => {
+                const activeSection = document.querySelector('.section.active .content');
+                if (activeSection) startAutoScroll(activeSection);
+            }, 3000);
+
             // Setup MQTT
             const mqttClient = mqtt.connect('ws://mqtt:8889/mqtt', {
                 clientId: CONFIG.mqtt.clientId,
@@ -412,7 +426,11 @@ TH V
             if (sections.length <= 1) return; // Nothing to cycle
 
             const currentSection = document.getElementById(sections[currentSectionIndex]);
-            if (currentSection) currentSection.classList.remove('active');
+            if (currentSection) {
+                currentSection.classList.remove('active');
+                const content = currentSection.querySelector('.content');
+                if (content) content.scrollTop = 0;
+            }
 
             const currentIcon = document.getElementById('accent-' + sections[currentSectionIndex]);
             if (currentIcon) currentIcon.classList.remove('active');
@@ -429,11 +447,44 @@ TH V
                 );
 
                 const nextSection = document.getElementById(sections[currentSectionIndex]);
-                if (nextSection) nextSection.classList.add('active');
+                if (nextSection) {
+                    nextSection.classList.add('active');
+                    startAutoScroll(nextSection.querySelector('.content'));
+                }
 
                 const nextIcon = document.getElementById('accent-' + sections[currentSectionIndex]);
                 if (nextIcon) nextIcon.classList.add('active');
             }, 1500); // Wait for fade out to complete before fading in the next one
+        }
+
+        let scrollTimer = null;
+        let scrollTimeout = null;
+        function startAutoScroll(element) {
+            if (scrollTimer) clearInterval(scrollTimer);
+            if (scrollTimeout) clearTimeout(scrollTimeout);
+            if (!element) return;
+            
+            // Force scroll position to the top every time a screen becomes active
+            element.scrollTop = 0;
+            
+            // Wait 2 seconds before starting to scroll
+            scrollTimeout = setTimeout(() => {
+                const maxScroll = element.scrollHeight - element.clientHeight;
+                if (maxScroll <= 0) return; // No scrolling needed
+
+                // We have ~10 seconds left to scroll before the next cycle
+                const duration = 10000;
+                const interval = 50;
+                const step = maxScroll / (duration / interval);
+
+                scrollTimer = setInterval(() => {
+                    if (element.scrollTop >= maxScroll) {
+                        clearInterval(scrollTimer);
+                    } else {
+                        element.scrollTop += step;
+                    }
+                }, interval);
+            }, 2000);
         }
 
         function fetchClasses() {

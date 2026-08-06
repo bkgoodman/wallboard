@@ -1,9 +1,18 @@
+TH V
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Automotive Display</title>
+    <title>Display</title>
+
+    <!-- ========================================================= -->
+    <!-- EDIT THIS LINE TO POINT TO YOUR ACTUAL CONFIG FILE        -->
+    <!-- (e.g. src="config.auto.js" or src="config.js")            -->
+    <!-- ========================================================= -->
+    <script src="config.auto.js"></script>
+
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <style>
         body {
@@ -11,7 +20,8 @@
             font-family: "Trebuchet MS", Helvetica, sans-serif;
             height: 100vh;
             overflow: hidden;
-            background: linear-gradient(-45deg, #ae5732, #a71c5e, #1396b5, #13b59b);
+            /* Default background, overridden by CONFIG if set */
+            background: linear-gradient(-45deg, #333333, #555555, #111111, #444444);
             background-size: 400% 400%;
             animation: body-gradient 15s ease infinite;
             color: white;
@@ -22,9 +32,17 @@
         }
 
         @keyframes body-gradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
         }
 
         .section {
@@ -39,7 +57,7 @@
             background: rgba(0, 0, 0, 0.7);
             border-radius: 20px;
             padding: 40px;
-            box-shadow: 10px 10px 30px rgba(0,0,0,0.7);
+            box-shadow: 10px 10px 30px rgba(0, 0, 0, 0.7);
             overflow-y: hidden;
             box-sizing: border-box;
             pointer-events: none;
@@ -54,7 +72,7 @@
             font-size: 3.5em;
             text-align: center;
             margin-top: 0;
-            border-bottom: 3px solid rgba(255,255,255,0.4);
+            border-bottom: 3px solid rgba(255, 255, 255, 0.4);
             padding-bottom: 20px;
             display: flex;
             align-items: center;
@@ -67,6 +85,12 @@
             width: 100%;
             height: calc(100% - 100px);
             overflow-y: auto;
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+
+        .content::-webkit-scrollbar {
+            display: none; /* Chrome, Safari and Opera */
         }
 
         /* Adjustments for the tables fetched from the CGI scripts */
@@ -75,14 +99,18 @@
             font-size: 1.1em;
             border-collapse: collapse;
         }
+
         .content th {
             color: #76eeff;
             border-bottom: 2px solid #54acdd;
         }
-        .content th, .content td {
+
+        .content th,
+        .content td {
             padding: 15px;
             text-align: left;
         }
+
         .content tr:nth-child(even) {
             background-color: rgba(255, 255, 255, 0.1);
         }
@@ -93,16 +121,20 @@
             right: 20px;
             height: 150px;
             opacity: 0;
-            filter: drop-shadow(5px 5px 10px rgba(0,0,0,0.5));
+            filter: drop-shadow(5px 5px 10px rgba(0, 0, 0, 0.5));
             transition: opacity 1.5s ease-in-out;
             pointer-events: none;
         }
+
         .accent-graphic.active {
             opacity: 0.8;
         }
 
         /* Popup Styles */
-        #post, #alert, #resource_post, #speakbot, #autolift_user {
+        #post,
+        #alert,
+        #resource_post,
+        #speakbot {
             z-index: 115;
             position: absolute;
             left: 30px;
@@ -115,16 +147,48 @@
             transition: opacity 0.5s;
         }
 
-        #post { top: 20px; background-color: #ff0000d0; }
-        #alert { top: 20px; background-color: #0000ffd0; }
-        #resource_post { bottom: 20px; background-color: #ffffffd0; color: black; text-shadow: none; }
-        #speakbot { 
-            background-color: #00fffff0; 
+        #post {
+            top: 20px;
+            background-color: #ff0000d0;
+        }
+
+        #alert {
+            top: 20px;
+            background-color: #0000ffd0;
+        }
+
+        #resource_post {
+            bottom: 20px;
+            background-color: #ffffffd0;
+            color: black;
+            text-shadow: none;
+        }
+
+        #speakbot {
+            background-color: #00fffff0;
             animation: speakbot 6s infinite;
         }
-        #autolift_user { 
-            bottom: 110px; 
-            background-color: #8f8fffd0; 
+
+        /* Generic Resource Status Popup Container */
+        #resource_status_container {
+            position: absolute;
+            bottom: 110px;
+            left: 30px;
+            display: flex;
+            flex-direction: column-reverse;
+            gap: 15px;
+            z-index: 110;
+        }
+
+        .resource_status_popup {
+            text-shadow: 1px 1px 2px black, 0 0 25px black, 0 0 55px black, 0 0 5px black;
+            box-shadow: 1px 1px 2px black, 0 0 25px black, 0 0 55px black, 0 0 5px black;
+            padding: 25px;
+            border-radius: 10px;
+            background-color: #8f8fffd0;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s;
         }
 
         .showalert {
@@ -133,9 +197,17 @@
         }
 
         @keyframes speakbot {
-            0% {background-color:#00fffff0;}
-            50% {background-color:#ff0000f0;}
-            100% {background-color:#00fffff0;}
+            0% {
+                background-color: #00fffff0;
+            }
+
+            50% {
+                background-color: #ff0000f0;
+            }
+
+            100% {
+                background-color: #00fffff0;
+            }
         }
 
         .alert_title {
@@ -143,6 +215,7 @@
             font-weight: 900;
             font-size: 86px;
         }
+
         .alert_text {
             color: yellow;
             font-weight: 900;
@@ -150,14 +223,27 @@
         }
     </style>
 </head>
+
 <body onload="initDisplay()">
 
     <!-- Popups -->
-    <div id="alert"><div id="alert_title" class="alert_title"></div><div id="alert_text" class="alert_text"></div></div>
-    <div id="post"><div id="post_title" class="alert_title"></div><div id="post_text" class="alert_text"></div></div>
-    <div id="resource_post"><div id="resource_text" class="alert_text" style="color: black;"></div></div>
-    <div id="speakbot"><div id="speakbot_text" class="alert_text"></div></div>
-    <div id="autolift_user"><div id="autolift_user_text" class="alert_text"></div></div>
+    <div id="alert">
+        <div id="alert_title" class="alert_title"></div>
+        <div id="alert_text" class="alert_text"></div>
+    </div>
+    <div id="post">
+        <div id="post_title" class="alert_title"></div>
+        <div id="post_text" class="alert_text"></div>
+    </div>
+    <div id="resource_post">
+        <div id="resource_text" class="alert_text" style="color: black;"></div>
+    </div>
+    <div id="speakbot">
+        <div id="speakbot_text" class="alert_text"></div>
+    </div>
+
+    <!-- Dynamic Resource Status Container -->
+    <div id="resource_status_container"></div>
 
     <!-- Lightbulb / Accent Graphics -->
     <img id="accent-classes" src="MakeItCog.svg" class="accent-graphic active" alt="Classes Icon" />
@@ -166,7 +252,6 @@
 
     <!-- Section 1: Classes -->
     <div id="classes" class="section active">
-        <h1>Upcoming Classes</h1>
         <div id="classes-content" class="content">Loading classes...</div>
     </div>
 
@@ -183,33 +268,73 @@
     </div>
 
     <script>
-        const sections = ['classes', 'reservations', 'notices'];
+        let sections = ['classes', 'reservations'];
         let currentSectionIndex = 0;
 
         function initDisplay() {
+            // Apply configurations to the document
+            document.title = CONFIG.title;
+
+            if (CONFIG.backgroundVideo) {
+                document.body.style.background = 'black';
+                let videoEl = document.createElement("video");
+                videoEl.style.cssText = "z-index: -1; position: absolute; top: 0px; left: 0px; width: 100vw; height: 100vh; object-fit: cover;";
+                videoEl.autoplay = true;
+                videoEl.loop = true;
+                videoEl.muted = true;
+                videoEl.playsInline = true;
+
+                let sourceEl = document.createElement("source");
+                sourceEl.src = CONFIG.backgroundVideo;
+                videoEl.appendChild(sourceEl);
+                document.body.appendChild(videoEl);
+            } else if (CONFIG.backgroundColors && CONFIG.backgroundColors.length > 0) {
+                document.body.style.background = 'linear-gradient(-45deg, ' + CONFIG.backgroundColors.join(', ') + ')';
+                document.body.style.backgroundSize = '400% 400%';
+            }
+
+            if (CONFIG.noticesUrl) {
+                sections.push('notices');
+            } else {
+                document.getElementById("notices").style.display = "none";
+                document.getElementById("accent-notices").style.display = "none";
+            }
+
             fetchClasses();
             fetchReservations();
-            fetchNotices();
+            if (CONFIG.noticesUrl) fetchNotices();
 
             // Refresh data periodically in the background
             setInterval(fetchClasses, 15 * 60 * 1000); // 15 mins
             setInterval(fetchReservations, 15 * 60 * 1000); // 15 mins
-            setInterval(fetchNotices, 15 * 60 * 1000); // 15 mins
+            if (CONFIG.noticesUrl) setInterval(fetchNotices, 15 * 60 * 1000); // 15 mins
 
             // Rotate sections every 15 seconds
             setInterval(cycleSections, 15000);
 
+            // Start scrolling the initial section
+            setTimeout(() => {
+                const activeSection = document.querySelector('.section.active .content');
+                if (activeSection) startAutoScroll(activeSection);
+            }, 3000);
+
             // Setup MQTT
             const mqttClient = mqtt.connect('ws://mqtt:8889/mqtt', {
-                clientId: 'wallboard-auto',
+                clientId: CONFIG.mqtt.clientId,
             });
 
             mqttClient.on('connect', () => {
                 console.log('Connected to MQTT broker');
-                mqttClient.subscribe('displayboard/read/auto/#');
+                mqttClient.subscribe('displayboard/read/' + CONFIG.mqtt.topicBase + '/#');
                 mqttClient.subscribe('displayboard/read/resource/post');
-                mqttClient.subscribe('displayboard/read/status/autolift-primary');
                 mqttClient.subscribe('speakbot');
+
+                // Subscribe to all resource topics
+                if (CONFIG.mqtt.resources) {
+                    for (const topic in CONFIG.mqtt.resources) {
+                        mqttClient.subscribe(topic);
+                    }
+                }
             });
 
             let alertTimer = null;
@@ -222,7 +347,7 @@
                     }
                 } catch (e) { }
 
-                if (topic === "displayboard/read/auto/alert") {
+                if (topic === "displayboard/read/" + CONFIG.mqtt.topicBase + "/alert") {
                     const el = document.getElementById("alert");
                     document.getElementById('alert_title').innerHTML = j['Title'] || "";
                     document.getElementById('alert_text').innerHTML = j['Message'] || "";
@@ -232,8 +357,8 @@
                         el.classList.remove("showalert");
                         alertTimer = null;
                     }, (j["Timeout"] || 10) * 1000);
-                } 
-                else if (topic === "displayboard/read/auto/post") {
+                }
+                else if (topic === "displayboard/read/" + CONFIG.mqtt.topicBase + "/post") {
                     const el = document.getElementById("post");
                     if (!j['Title'] && !j['Message']) {
                         el.classList.remove("showalert");
@@ -242,16 +367,37 @@
                         document.getElementById('post_text').innerHTML = j['Message'] || "";
                         el.classList.add("showalert");
                     }
-                } 
-                else if (topic === "displayboard/read/status/autolift-primary") {
-                    const el = document.getElementById("autolift_user");
+                }
+                else if (CONFIG.mqtt.resources && CONFIG.mqtt.resources[topic]) {
+                    let container = document.getElementById("resource_status_container");
+                    // Create a safe ID for the DOM element based on the topic
+                    let popupId = "res_" + topic.replace(/[^a-zA-Z0-9]/g, '_');
+                    let el = document.getElementById(popupId);
+
+                    let resConfig = CONFIG.mqtt.resources[topic];
+                    let label = typeof resConfig === 'string' ? resConfig : resConfig.label;
+                    let bgColor = typeof resConfig === 'string' ? null : resConfig.bgColor;
+
+                    if (!el) {
+                        el = document.createElement("div");
+                        el.id = popupId;
+                        el.className = "resource_status_popup";
+                        if (bgColor) el.style.backgroundColor = bgColor;
+
+                        let textEl = document.createElement("div");
+                        textEl.className = "alert_text";
+                        el.appendChild(textEl);
+
+                        container.appendChild(el);
+                    }
+
                     if (j['text']) {
                         el.classList.add("showalert");
-                        document.getElementById('autolift_user_text').innerHTML = "Auto Lift: " + j['text'];
+                        el.firstChild.innerHTML = label + " " + j['text'];
                     } else {
                         el.classList.remove("showalert");
                     }
-                } 
+                }
                 else if (topic === "speakbot") {
                     const el = document.getElementById("speakbot");
                     if (j['text'] && j['command'] !== "/clear") {
@@ -259,7 +405,7 @@
                         document.getElementById('speakbot_text').innerHTML = j['text'];
                         setTimeout(() => el.classList.remove("showalert"), 10 * 60 * 1000);
                     }
-                } 
+                }
                 else if (topic === "displayboard/read/resource/post") {
                     const el = document.getElementById("resource_post");
                     el.classList.add("showalert");
@@ -267,90 +413,147 @@
                     setTimeout(() => el.classList.remove("showalert"), 5000);
                 }
             });
-            // Close window on keypress or click
-            document.addEventListener('keydown', () => window.close());
-            document.addEventListener('click', () => window.close());
+            // Close window on keypress or click (if enabled)
+            if (CONFIG.kioskExitOnClick !== false) {
+                document.addEventListener('keydown', () => window.close());
+                document.addEventListener('click', () => window.close());
+            }
         }
 
         function cycleSections() {
+            if (sections.length <= 1) return; // Nothing to cycle
+
             const currentSection = document.getElementById(sections[currentSectionIndex]);
-            currentSection.classList.remove('active');
-            
+            if (currentSection) {
+                currentSection.classList.remove('active');
+                const content = currentSection.querySelector('.content');
+                if (content) content.scrollTop = 0;
+            }
+
             const currentIcon = document.getElementById('accent-' + sections[currentSectionIndex]);
-            currentIcon.classList.remove('active');
+            if (currentIcon) currentIcon.classList.remove('active');
 
             setTimeout(() => {
-                currentSectionIndex = (currentSectionIndex + 1) % sections.length;
+                let loopCount = 0;
+                do {
+                    currentSectionIndex = (currentSectionIndex + 1) % sections.length;
+                    loopCount++;
+                } while (
+                    document.getElementById(sections[currentSectionIndex]) &&
+                    document.getElementById(sections[currentSectionIndex]).getAttribute('data-skip') === 'true' &&
+                    loopCount < sections.length
+                );
+
                 const nextSection = document.getElementById(sections[currentSectionIndex]);
-                nextSection.classList.add('active');
+                if (nextSection) {
+                    nextSection.classList.add('active');
+                    startAutoScroll(nextSection.querySelector('.content'));
+                }
 
                 const nextIcon = document.getElementById('accent-' + sections[currentSectionIndex]);
-                nextIcon.classList.add('active');
+                if (nextIcon) nextIcon.classList.add('active');
             }, 1500); // Wait for fade out to complete before fading in the next one
         }
 
+        let scrollTimer = null;
+        let scrollTimeout = null;
+        function startAutoScroll(element) {
+            if (scrollTimer) clearInterval(scrollTimer);
+            if (scrollTimeout) clearTimeout(scrollTimeout);
+            if (!element) return;
+            
+            // Force scroll position to the top every time a screen becomes active
+            element.scrollTop = 0;
+            
+            // Wait 2 seconds before starting to scroll
+            scrollTimeout = setTimeout(() => {
+                const maxScroll = element.scrollHeight - element.clientHeight;
+                if (maxScroll <= 0) return; // No scrolling needed
+
+                // We have ~10 seconds left to scroll before the next cycle
+                const duration = 10000;
+                const interval = 50;
+                const step = maxScroll / (duration / interval);
+                
+                scrollTimer = setInterval(() => {
+                    if (element.scrollTop >= maxScroll) {
+                        clearInterval(scrollTimer);
+                    } else {
+                        element.scrollTop += step;
+                    }
+                }, interval);
+            }, 2000);
+        }
+
         function fetchClasses() {
-            fetch("https://auth.makeitlabs.com/cgi/evtbrite.py?cal=auto")
-              .then(response => response.text())
-              .then(data => {
-                  document.getElementById("classes-content").innerHTML = data || "No upcoming classes.";
-              })
-              .catch(err => console.error("Error fetching classes:", err));
+            fetch("https://auth.makeitlabs.com/cgi/evtbrite.py?cal=" + CONFIG.calendarName)
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById("classes-content").innerHTML = data || "No upcoming classes.";
+                })
+                .catch(err => console.error("Error fetching classes:", err));
         }
 
         function fetchReservations() {
-            fetch("https://auth.makeitlabs.com/cgi/gencal.py?cal=auto")
-              .then(response => response.json())
-              .then(data => {
-                  let html = "<table>";
-                  html += "<tr><th>Person</th><th>Summary</th><th>When</th></tr>";
-                  
-                  let hasItems = false;
-                  for (let key in data) {
-                      let record = data[key];
-                      html += `<tr>
+            fetch("https://auth.makeitlabs.com/cgi/gencal.py?cal=" + CONFIG.calendarName)
+                .then(response => response.json())
+                .then(data => {
+                    let html = "<table>";
+                    html += "<tr><th>Person</th><th>Summary</th><th>When</th></tr>";
+
+                    let hasItems = false;
+                    for (let key in data) {
+                        let record = data[key];
+                        html += `<tr>
                           <td>${record['ORGANIZER'] || '-'}</td>
                           <td>${record['SUMMARY'] || '-'}</td>
                           <td>${record['DOW'] || ''} ${record['TIME'] || ''}</td>
                       </tr>`;
-                      hasItems = true;
-                  }
-                  html += "</table>";
-                  
-                  if (!hasItems) {
-                      html = "<p style='text-align: center; margin-top: 50px;'>No upcoming reservations.</p>";
-                  }
-                  document.getElementById("reservations-content").innerHTML = html;
-              })
-              .catch(err => {
-                  console.error("Error fetching reservations:", err);
-                  document.getElementById("reservations-content").innerHTML = "<p style='text-align: center; margin-top: 50px;'>No upcoming reservations.</p>";
-              });
+                        hasItems = true;
+                    }
+                    html += "</table>";
+
+                    if (!hasItems) {
+                        html = "<p style='text-align: center; margin-top: 50px;'>No upcoming reservations.</p>";
+                    }
+                    document.getElementById("reservations-content").innerHTML = html;
+                })
+                .catch(err => {
+                    console.error("Error fetching reservations:", err);
+                    document.getElementById("reservations-content").innerHTML = "<p style='text-align: center; margin-top: 50px;'>No upcoming reservations.</p>";
+                });
         }
 
         function fetchNotices() {
-            fetch("https://auth.makeitlabs.com/authit/api/v1/resources/auto-lift-users/notices")
-              .then(response => response.json())
-              .then(data => {
-                  if (data.length === 0) {
-                      document.getElementById("notices-content").innerHTML = "No notices at this time.";
-                      return;
-                  }
-                  let html = "";
-                  for (let key in data) {
-                      let record = data[key];
-                      html += `<div class="notice">
+            if (!CONFIG.noticesUrl) return;
+            fetch(CONFIG.noticesUrl)
+                .then(response => response.json())
+                .then(data => {
+                    const noticesSection = document.getElementById("notices");
+                    if (!data || data.length === 0) {
+                        document.getElementById("notices-content").innerHTML = "No notices at this time.";
+                        if (noticesSection) noticesSection.setAttribute('data-skip', 'true');
+                        return;
+                    }
+                    if (noticesSection) noticesSection.removeAttribute('data-skip');
+                    let html = "";
+                    for (let key in data) {
+                        let record = data[key];
+                        html += `<div class="notice">
                           <h3>${record['title'] || '-'}</h3>
                           <p>${record['message'] || '-'}</p>
                       </div>`;
-                  }
-                  document.getElementById("notices-content").innerHTML = html;
-              })
-              .catch(err => {
-                  console.error("Failed to fetch notices", err);
-                  document.getElementById("notices-content").innerHTML = "Error loading notices.";
-              });
+                    }
+                    document.getElementById("notices-content").innerHTML = html;
+                })
+                .catch(err => {
+                    console.error("Failed to fetch notices", err);
+                    document.getElementById("notices-content").innerHTML = "Error loading notices.";
+                    const noticesSection = document.getElementById("notices");
+                    if (noticesSection) noticesSection.setAttribute('data-skip', 'true');
+                });
         }
     </script>
 </body>
+
 </html>
