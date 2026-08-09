@@ -426,8 +426,6 @@ TH V
             const currentSection = document.getElementById(sections[currentSectionIndex]);
             if (currentSection) {
                 currentSection.classList.remove('active');
-                const content = currentSection.querySelector('.content');
-                if (content) content.scrollTop = 0;
             }
 
             const currentIcon = document.getElementById('accent-' + sections[currentSectionIndex]);
